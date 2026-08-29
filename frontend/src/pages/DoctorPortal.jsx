@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Stethoscope, Calendar, Clock, User, CheckCircle2, Plus, Phone, FileText, Pill } from 'lucide-react';
+import { Stethoscope, Calendar, Clock, User, CheckCircle2, Plus, Phone, FileText, Pill, History } from 'lucide-react';
 import { getDoctorQueue, createDoctorSlots, updateAppointmentStatus } from '../api/index.js';
 import PrescriptionWriterModal from '../components/PrescriptionWriterModal.jsx';
+import StudentHistoryModal from '../components/StudentHistoryModal.jsx';
 
 const C = {
   primary: '#2F7A68',
@@ -22,6 +23,7 @@ export default function DoctorPortal() {
   const qc = useQueryClient();
   const [tab, setTab] = useState('queue'); // 'queue' | 'schedule'
   const [selectedAppt, setSelectedAppt] = useState(null);
+  const [historyStudent, setHistoryStudent] = useState(null);
   const [slotDate, setSlotDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTimes, setSelectedTimes] = useState(DEFAULT_SLOTS);
 
@@ -158,20 +160,49 @@ export default function DoctorPortal() {
                 </span>
               </div>
 
-              <div style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>
-                {inConsultation.student_name}
-              </div>
-              <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-                {inConsultation.student_email} · {inConsultation.student_phone || 'No phone'}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>
+                    {inConsultation.student_name}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
+                    {inConsultation.student_email} · Blood: <strong>{inConsultation.blood_group || 'O+'}</strong>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setHistoryStudent({ id: inConsultation.student_id, name: inConsultation.student_name })}
+                  style={{
+                    background: '#fff',
+                    border: `1px solid ${C.primary}`,
+                    color: C.primary,
+                    borderRadius: 10,
+                    padding: '6px 10px',
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <History size={13} /> View Past History
+                </button>
               </div>
 
+              {inConsultation.allergies && inConsultation.allergies !== 'None reported' && (
+                <div style={{ background: '#FBE7E4', color: '#D6483C', padding: '6px 10px', borderRadius: 8, marginTop: 8, fontSize: 11.5, fontWeight: 600 }}>
+                  ⚠️ Allergy Alert: {inConsultation.allergies}
+                </div>
+              )}
+
               {inConsultation.notes && (
-                <div style={{ background: '#fff', padding: '8px 12px', borderRadius: 10, marginTop: 10, fontSize: 12, color: C.ink }}>
+                <div style={{ background: '#fff', padding: '8px 12px', borderRadius: 10, marginTop: 8, fontSize: 12, color: C.ink }}>
                   <strong>Chief Complaint:</strong> "{inConsultation.notes}"
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 <button
                   onClick={() => setSelectedAppt(inConsultation)}
                   style={{
@@ -247,12 +278,27 @@ export default function DoctorPortal() {
                           {appt.student_name}
                         </div>
                         <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-                          Slot: {appt.slot_time} · {appt.notes || 'Routine checkup'}
+                          Slot: {appt.slot_time} · Blood: <strong>{appt.blood_group || 'O+'}</strong>
                         </div>
                       </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        onClick={() => setHistoryStudent({ id: appt.student_id, name: appt.student_name })}
+                        title="View Medical History"
+                        style={{
+                          background: C.bg,
+                          color: C.ink,
+                          borderRadius: 10,
+                          padding: '7px 8px',
+                          fontSize: 12,
+                          border: `1px solid ${C.border}`,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <History size={14} />
+                      </button>
                       <button
                         onClick={() => setSelectedAppt(appt)}
                         style={{
@@ -266,7 +312,7 @@ export default function DoctorPortal() {
                           cursor: 'pointer',
                         }}
                       >
-                        Rx Prescribe
+                        Rx
                       </button>
                       <button
                         onClick={() => changeStatus({ id: appt.id, status: 'in_consultation' })}
@@ -372,6 +418,22 @@ export default function DoctorPortal() {
         <PrescriptionWriterModal
           appointment={selectedAppt}
           onClose={() => setSelectedAppt(null)}
+        />
+      )}
+
+      {historyStudent && (
+        <StudentHistoryModal
+          studentId={historyStudent.id}
+          studentName={historyStudent.name}
+          onPrescribe={(stud) => {
+            setHistoryStudent(null);
+            setSelectedAppt({
+              student_id: stud.id,
+              student_name: stud.name,
+              student_email: stud.email,
+            });
+          }}
+          onClose={() => setHistoryStudent(null)}
         />
       )}
     </div>

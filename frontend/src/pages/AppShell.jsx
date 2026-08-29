@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Home, Calendar, Pill, HeartPulse, HelpCircle, Bell, ShieldAlert, Sparkles, Stethoscope, LogOut } from 'lucide-react';
+import { Home, Calendar, Pill, HeartPulse, HelpCircle, Bell, ShieldAlert, Sparkles, Stethoscope, LogOut, User, CreditCard } from 'lucide-react';
 import { getUnreadCount } from '../api/index.js';
 import { useAuthStore, useUIStore } from '../store/store.js';
 import { socket } from '../socket/socket.js';
@@ -9,6 +9,7 @@ import { socket } from '../socket/socket.js';
 import EmergencyModal from '../components/EmergencyModal.jsx';
 import NotificationsPanel from '../components/NotificationsPanel.jsx';
 import AIAssistantModal from '../components/AIAssistantModal.jsx';
+import ProfileModal from '../components/ProfileModal.jsx';
 import DoctorPortal from './DoctorPortal.jsx';
 import PharmacyPortal from './PharmacyPortal.jsx';
 import HomePage from './HomePage.jsx';
@@ -38,6 +39,7 @@ export default function AppShell() {
   const [liveUnread, setLiveUnread] = useState(0);
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiInitialQuery, setAiInitialQuery] = useState('');
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Active Role Switcher for Hackathon Demo: 'student' | 'doctor' | 'pharmacist'
   const [activePersona, setActivePersona] = useState('student');
@@ -87,7 +89,7 @@ export default function AppShell() {
       <div style={{ width: '100%', maxWidth: 430, minHeight: 820, background: C.frame, borderRadius: 28, boxShadow: '0 20px 60px -20px rgba(23,50,44,0.35)', border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
 
         {/* ─── Top Header with Brand & Demo Role Switcher ─── */}
-        <div style={{ padding: '18px 18px 12px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ padding: '16px 18px 12px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 32, height: 32, borderRadius: 10, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16 }}>
@@ -104,13 +106,34 @@ export default function AppShell() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Profile / Health ID Button */}
+              <button
+                onClick={() => setProfileOpen(true)}
+                title="Student Medical Profile & Health Card"
+                style={{
+                  height: 34,
+                  padding: '0 8px',
+                  borderRadius: 10,
+                  background: C.primarySoft,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  border: `1px solid ${C.primary}`,
+                  color: C.primary,
+                  fontWeight: 700,
+                  fontSize: 11.5,
+                }}
+              >
+                <CreditCard size={14} /> ID
+              </button>
+
               {/* AI Trigger Icon */}
               <button
                 onClick={() => handleOpenAI()}
                 title="Ask Gemini Health AI"
-                style={{ width: 34, height: 34, borderRadius: 10, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.primary}` }}
+                style={{ width: 34, height: 34, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
               >
-                <Sparkles size={16} color={C.primary} />
+                <Sparkles size={16} color={C.accent} />
               </button>
 
               {/* Notification Bell */}
@@ -233,6 +256,7 @@ export default function AppShell() {
       {emergencyOpen && <EmergencyModal onClose={() => setEmergencyOpen(false)} />}
       {notifOpen     && <NotificationsPanel onClose={() => setNotifOpen(false)} />}
       {aiModalOpen   && <AIAssistantModal initialQuery={aiInitialQuery} onClose={() => setAiModalOpen(false)} />}
+      {profileOpen   && <ProfileModal onClose={() => setProfileOpen(false)} />}
     </div>
   );
 }

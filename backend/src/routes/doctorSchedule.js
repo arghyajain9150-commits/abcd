@@ -29,6 +29,7 @@ router.get('/queue', authMiddleware, async (req, res, next) => {
     const appts = await query(
       `SELECT a.*, 
               u.name as student_name, u.email as student_email, u.phone as student_phone,
+              u.blood_group, u.allergies, u.hostel_block, u.room_number,
               s.slot_time, s.slot_date,
               d.name as doctor_name, d.specialty as doctor_specialty
        FROM appointments a
@@ -53,12 +54,69 @@ router.get('/queue', authMiddleware, async (req, res, next) => {
   }
 });
 
+// GET /api/doctor/student/:studentId/history - Doctor inspects student full medical history
+router.get('/student/:studentId/history', authMiddleware, async (req, res, next) => {
+  try {
+    const { studentId } = req.params;
+
+    // 1. Get student profile & medical attributes
+    const studentRes = await query(
+      `SELECT id, name, email, phone, blood_group, allergies, hostel_block, room_number, emergency_contact, created_at
+       FROM users WHERE id = $1`,
+      [studentId]
+    );
+
+    if (!studentRes.rows[0]) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    const student = studentRes.rows[0];
+
+    // 2. Get past digital prescriptions
+    const rxRes = await query(
+      `SELECT p.*, d.name as doctor_name, d.specialty as doctor_specialty
+       FROM prescriptions p
+       LEFT JOIN doctors d ON p.doctor_id = d.id
+       WHERE p.student_id = $1
+       ORDER BY p.created_at DESC`,
+      [studentId]
+    );
+
+    const prescriptions = [];
+    for (const rx of rxRes.rows) {
+      const itemsRes = await query(
+        'SELECT * FROM prescription_items WHERE prescription_id = $1',
+        [rx.id]
+      );
+      prescriptions.push({ ...rx, items: itemsRes.rows });
+    }
+
+    // 3. Get past visits/appointments
+    const apptsRes = await query(
+      `SELECT a.*, s.slot_time, s.slot_date, d.name as doctor_name, d.specialty as doctor_specialty
+       FROM appointments a
+       JOIN slots s ON a.slot_id = s.id
+       JOIN doctors d ON a.doctor_id = d.id
+       WHERE a.student_id = $1
+       ORDER BY s.slot_date DESC, s.slot_time DESC`,
+      [studentId]
+    );
+
+    res.json({
+      student,
+      prescriptions,
+      appointments: apptsRes.rows,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/doctor/slots - Doctor adds new clinic time slots
 router.post('/slots', authMiddleware, async (req, res, next) => {
   try {
     const SlotSchema = z.object({
       slot_date: z.string(), // YYYY-MM-DD
-      slot_times: z.array(z.string()).min(1), // ["09:00", "09:30"]
+      slot_times: z.array(z.string()).min(1),
       doctor_id: z.string().uuid().optional(),
     });
 
@@ -113,15 +171,19 @@ router.patch('/appointments/:id/status', authMiddleware, async (req, res, next) 
 
     // Notify Student
     if (status === 'in_consultation') {
-      await query(
-        `INSERT INTO notifications (user_id, title, body, type)
-         VALUES ($1, '🩺 Your Turn Now!', 'Dr. is ready to see you in Consultation Room 1.', 'urgent')`,
-        [appt.student_id]
-      );
-      io.to(`user:${appt.student_id}`).emit('new_notification', {
-        title: '🩺 Your Turn Now!',
-        body: 'Dr. is ready to see you in Consultation Room 1.'
-      });
+      try {
+        await query(
+          `INSERT INTO notifications (user_id, title, body, type)
+           VALUES ($1, '🩺 Your Turn Now!', 'Dr. is ready to see you in Consultation Room 1.', 'urgent')`,
+          [appt.student_id]
+        );
+        io.to(`user:${appt.student_id}`).emit('new_notification', {
+          title: '🩺 Your Turn Now!',
+          body: 'Dr. is ready to see you in Consultation Room 1.'
+        });
+      } catch (e) {
+        console.warn('Could not write consultation notification:', e.message);
+      }
     }
 
     io.emit('queue_update', { doctorId: appt.doctor_id, status });

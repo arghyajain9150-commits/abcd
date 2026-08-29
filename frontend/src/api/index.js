@@ -1,9 +1,10 @@
 import api from './axios.js';
 
-// Auth
-export const register = (data) => api.post('/auth/register', data);
-export const login    = (data) => api.post('/auth/login', data);
-export const getMe    = ()     => api.get('/auth/me');
+// Auth & Profile
+export const register      = (data)        => api.post('/auth/register', data);
+export const login         = (data)        => api.post('/auth/login', data);
+export const getMe         = ()            => api.get('/auth/me');
+export const updateProfile = (data)        => api.patch('/auth/profile', data);
 
 // Doctors & Slots
 export const getDoctors      = ()              => api.get('/doctors');
@@ -38,6 +39,7 @@ export const updatePrescriptionStatus  = (id, status) => api.patch(`/prescriptio
 export const getDoctorQueue            = (date, docId)=> api.get(`/doctor/queue?date=${date || ''}&doctor_id=${docId || ''}`);
 export const createDoctorSlots         = (data)       => api.post('/doctor/slots', data);
 export const updateAppointmentStatus   = (id, status) => api.patch(`/doctor/appointments/${id}/status`, { status });
+export const getStudentHistory         = (studentId)  => api.get(`/doctor/student/${studentId}/history`);
 
 // ─── Pharmacy Inventory ───────────────────────────────────────────
 export const getPharmacyInventory      = ()           => api.get('/pharmacy/inventory');
