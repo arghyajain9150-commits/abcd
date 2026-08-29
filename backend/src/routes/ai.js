@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { triageSymptoms } from '../services/aiService.js';
 import { evaluateSpatialOutbreaks } from '../services/outbreakEngine.js';
+import { aiLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
-// POST /api/ai/triage - AI symptom triage & doctor recommendation
-router.post('/triage', async (req, res, next) => {
+// POST /api/ai/triage - AI symptom triage & doctor recommendation (Rate limited)
+router.post('/triage', aiLimiter, async (req, res, next) => {
   try {
     const { message, history } = req.body;
     if (!message || typeof message !== 'string') {

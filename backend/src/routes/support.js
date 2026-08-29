@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { query } from '../db/db.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { ticketLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -11,8 +12,8 @@ const TicketSchema = z.object({
   message: z.string().min(5),
 });
 
-// POST /api/support/tickets - Submit student helpdesk query / medical leave note request
-router.post('/tickets', authMiddleware, async (req, res, next) => {
+// POST /api/support/tickets - Submit student helpdesk query / medical leave note request (Rate limited)
+router.post('/tickets', authMiddleware, ticketLimiter, async (req, res, next) => {
   try {
     const data = TicketSchema.parse(req.body);
 

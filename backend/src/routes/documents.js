@@ -47,9 +47,17 @@ router.get('/student', authMiddleware, async (req, res, next) => {
   }
 });
 
-// GET /api/documents/student/:studentId - Doctor fetches patient's uploaded files
+// GET /api/documents/student/:studentId - Doctor fetches patient's uploaded files (With RBAC & Ownership checks)
 router.get('/student/:studentId', authMiddleware, async (req, res, next) => {
   try {
+    // Only allow if user is the document owner, or has a doctor/admin role
+    const isOwner = req.user.id === req.params.studentId;
+    const isMedicalStaff = req.user.role === 'doctor' || req.user.role === 'admin';
+
+    if (!isOwner && !isMedicalStaff) {
+      return res.status(403).json({ error: 'Access denied: You do not have permission to view this student\'s medical documents.' });
+    }
+
     const result = await query(
       `SELECT id, student_id, file_name, file_type, file_size, file_data, uploaded_at
        FROM student_documents
@@ -63,13 +71,18 @@ router.get('/student/:studentId', authMiddleware, async (req, res, next) => {
   }
 });
 
-// DELETE /api/documents/:id - Delete a document
+// DELETE /api/documents/:id - Delete a document (Strict ownership validation)
 router.delete('/:id', authMiddleware, async (req, res, next) => {
   try {
-    await query(
-      'DELETE FROM student_documents WHERE id = $1 AND student_id = $2',
+    const deleteRes = await query(
+      'DELETE FROM student_documents WHERE id = $1 AND student_id = $2 RETURNING id',
       [req.params.id, req.user.id]
     );
+
+    if (deleteRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found or unauthorized to delete' });
+    }
+
     res.json({ success: true, message: 'Document deleted' });
   } catch (err) {
     next(err);

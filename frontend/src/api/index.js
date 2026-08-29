@@ -31,10 +31,10 @@ export const getOutbreakAlerts = ()            => api.get('/ai/outbreaks');
 export const getCampusRadar    = ()            => api.get('/ai/radar');
 
 // ─── Digital Prescriptions ───────────────────────────────────────
-export const createPrescription        = (data)       => api.post('/prescriptions', data);
-export const getStudentPrescriptions   = ()           => api.get('/prescriptions/student');
-export const getPharmacyPrescriptions  = ()           => api.get('/prescriptions/pharmacy');
-export const updatePrescriptionStatus  = (id, status) => api.patch(`/prescriptions/${id}/status`, { status });
+export const createPrescription        = (data)              => api.post('/prescriptions', data);
+export const getStudentPrescriptions   = ()                  => api.get('/prescriptions/student');
+export const getPharmacyPrescriptions  = ()                  => api.get('/prescriptions/pharmacy');
+export const updatePrescriptionStatus  = (id, status, otp)   => api.patch(`/prescriptions/${id}/status`, { status, otp });
 
 // ─── Doctor Clinic & Schedule ─────────────────────────────────────
 export const getDoctorQueue            = (date, docId)=> api.get(`/doctor/queue?date=${date || ''}&doctor_id=${docId || ''}`);

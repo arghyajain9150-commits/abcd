@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pill, CheckCircle2, Clock, PackageCheck, AlertCircle, Search, User, FileText, Stethoscope, UploadCloud, Download, Filter, Check } from 'lucide-react';
+import { Pill, CheckCircle2, Clock, PackageCheck, AlertCircle, Search, User, FileText, Stethoscope, UploadCloud, Download, KeyRound, QrCode, ShieldCheck, X } from 'lucide-react';
 import { getPharmacyPrescriptions, updatePrescriptionStatus, getPharmacyInventory, getStudentPrescriptions, getMyDocuments } from '../api/index.js';
 import { useAuthStore } from '../store/store.js';
 import DocumentUploadModal from '../components/DocumentUploadModal.jsx';
@@ -22,7 +22,7 @@ const C = {
 const STATUS_CONFIG = {
   pending: { label: 'Pending', bg: C.accentSoft, color: C.accent, next: 'preparing', nextLabel: 'Start Packing' },
   preparing: { label: 'Packing', bg: C.primarySoft, color: C.primary, next: 'ready_for_pickup', nextLabel: 'Mark Ready for Pickup' },
-  ready_for_pickup: { label: 'Ready for Pickup', bg: '#D8F3E5', color: '#1B7A4B', next: 'dispensed', nextLabel: 'Hand Over to Student' },
+  ready_for_pickup: { label: 'Ready for Pickup', bg: '#D8F3E5', color: '#1B7A4B', next: 'dispensed', nextLabel: 'Verify OTP & Dispense' },
   dispensed: { label: 'Dispensed', bg: C.bg, color: C.soft, next: null },
 };
 
@@ -30,12 +30,16 @@ export default function PharmacyPortal({ persona = 'student' }) {
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
 
-  // If student persona -> default to personal records; If pharmacist -> default to fulfillment queue
   const isPharmacist = persona === 'pharmacist' || user?.role === 'pharmacist';
   const [activeTab, setActiveTab] = useState(isPharmacist ? 'orders' : 'my_rx');
   const [rxFilter, setRxFilter] = useState('active'); // 'active' | 'all'
   const [search, setSearch] = useState('');
   const [docModalOpen, setDocModalOpen] = useState(false);
+
+  // OTP Verification Modal for Pharmacist Handover
+  const [dispenseModalRx, setDispenseModalRx] = useState(null);
+  const [inputOtp, setInputOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
 
   // 1. Prescriptions for Pharmacist Fulfillment Desk
   const { data: allOrders = [], isLoading: ordersLoading } = useQuery({
@@ -64,21 +68,46 @@ export default function PharmacyPortal({ persona = 'student' }) {
     queryFn: () => getPharmacyInventory().then((r) => r.data),
   });
 
-  const { mutate: updateStatus } = useMutation({
-    mutationFn: ({ id, status }) => updatePrescriptionStatus(id, status),
+  const { mutate: updateStatus, isPending: updatingStatus } = useMutation({
+    mutationFn: ({ id, status, otp }) => updatePrescriptionStatus(id, status, otp),
     onSuccess: () => {
       qc.invalidateQueries(['pharmacy-prescriptions']);
       qc.invalidateQueries(['student-prescriptions']);
+      qc.invalidateQueries(['pharmacy-inventory']);
+      setDispenseModalRx(null);
+      setInputOtp('');
+      setOtpError('');
+    },
+    onError: (err) => {
+      setOtpError(err.response?.data?.error || 'Failed to update prescription status');
     },
   });
 
+  const handleActionClick = (rx, conf) => {
+    if (conf.next === 'dispensed') {
+      setDispenseModalRx(rx);
+      setInputOtp('');
+      setOtpError('');
+    } else {
+      updateStatus({ id: rx.id, status: conf.next });
+    }
+  };
+
+  const handleConfirmDispense = () => {
+    if (!dispenseModalRx) return;
+    if (!inputOtp.trim()) {
+      setOtpError('Please enter the 4-digit student pickup OTP');
+      return;
+    }
+    updateStatus({ id: dispenseModalRx.id, status: 'dispensed', otp: inputOtp.trim() });
+  };
+
   // Pharmacist filtered orders
   const activeOrders = allOrders.filter((o) => o.status !== 'dispensed');
-  const pastOrders = allOrders.filter((o) => o.status === 'dispensed');
   const displayedOrders = (rxFilter === 'active' ? activeOrders : allOrders).filter((o) =>
     o.student_name?.toLowerCase().includes(search.toLowerCase()) ||
     o.id?.toLowerCase().includes(search.toLowerCase()) ||
-    o.diagnosis?.toLowerCase().includes(search.toLowerCase())
+    o.hostel_block?.toLowerCase().includes(search.toLowerCase())
   );
 
   // Filtered inventory
@@ -95,7 +124,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
           {isPharmacist ? 'Pharmacy Fulfillment Desk' : 'My Prescriptions & Pharmacy'}
         </div>
         <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-          Block A Ground Floor · {isPharmacist ? 'Dispensary Queue Manager' : 'Your Confidential Health Records'}
+          Block A Ground Floor · {isPharmacist ? '2FA Dispensary & Inventory Manager' : 'Digital Health & Medication Pass'}
         </div>
       </div>
 
@@ -117,7 +146,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
                 cursor: 'pointer',
               }}
             >
-              Fulfillment ({activeOrders.length})
+              Fulfillment Queue ({activeOrders.length})
             </button>
             <button
               onClick={() => setActiveTab('inventory')}
@@ -133,7 +162,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
                 cursor: 'pointer',
               }}
             >
-              Stock Inventory
+              Medicine Stock
             </button>
           </>
         ) : (
@@ -184,7 +213,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
                 cursor: 'pointer',
               }}
             >
-              Medicine Stock
+              Stock Status
             </button>
           </>
         )}
@@ -200,7 +229,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
           ) : myPrescriptions.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 40, background: C.surface, borderRadius: 18, border: `1px solid ${C.border}`, color: C.soft }}>
               <FileText size={36} color={C.border} style={{ margin: '0 auto 8px' }} />
-              <div style={{ fontWeight: 700, fontSize: 14, color: C.ink }}>No Prescriptions Yet</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: C.ink }}>No Prescriptions on File</div>
               <div style={{ fontSize: 12, marginTop: 2 }}>When your campus doctor issues a prescription, it will appear here with live pickup status.</div>
             </div>
           ) : (
@@ -229,6 +258,44 @@ export default function PharmacyPortal({ persona = 'student' }) {
                       {new Date(rx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>
+
+                  {/* 2FA Pickup Verification OTP Card */}
+                  {isReady && rx.pickup_otp && (
+                    <div
+                      style={{
+                        background: 'linear-gradient(135deg, #E4EFEA 0%, #D5E8DF 100%)',
+                        border: `1.5px dashed ${C.primary}`,
+                        borderRadius: 14,
+                        padding: '12px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 10.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          🔐 Pickup Verification Code
+                        </div>
+                        <div style={{ fontSize: 11, color: C.soft, marginTop: 1 }}>
+                          Show this 4-digit code at Block A Dispensary:
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          background: C.primary,
+                          color: '#fff',
+                          fontWeight: 800,
+                          fontSize: 18,
+                          letterSpacing: '0.1em',
+                          padding: '4px 12px',
+                          borderRadius: 10,
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {rx.pickup_otp}
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <div style={{ fontWeight: 800, fontSize: 15, color: C.ink }}>
@@ -266,7 +333,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 2: STUDENT'S PERSONAL LAB FILES & ATTACHMENTS
+          VIEW 2: STUDENT'S PERSONAL LAB FILES
       ──────────────────────────────────────────────────────────────── */}
       {!isPharmacist && activeTab === 'my_files' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -355,7 +422,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 3: PHARMACIST FULFILLMENT QUEUE (ONLY IN PHARMACIST ROLE)
+          VIEW 3: PHARMACIST FULFILLMENT QUEUE (2FA SECURE HANDOVER)
       ──────────────────────────────────────────────────────────────── */}
       {isPharmacist && activeTab === 'orders' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -399,7 +466,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
             <div style={{ textAlign: 'center', padding: 40, background: C.surface, borderRadius: 18, border: `1px solid ${C.border}`, color: C.soft }}>
               <PackageCheck size={36} color={C.primary} style={{ margin: '0 auto 8px' }} />
               <div style={{ fontWeight: 700, fontSize: 14, color: C.ink }}>No Pending Orders</div>
-              <div style={{ fontSize: 12, marginTop: 2 }}>All incoming campus prescriptions have been dispensed!</div>
+              <div style={{ fontSize: 12, marginTop: 2 }}>All incoming campus prescriptions have been packed and dispensed!</div>
             </div>
           ) : (
             displayedOrders.map((rx) => {
@@ -437,8 +504,8 @@ export default function PharmacyPortal({ persona = 'student' }) {
                     <div style={{ fontWeight: 800, fontSize: 15, color: C.ink }}>
                       Patient: {rx.student_name}
                     </div>
-                    <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-                      Prescribed by <strong>{rx.doctor_name}</strong> · Diagnosis: <em>{rx.diagnosis}</em>
+                    <div style={{ fontSize: 11.5, color: C.soft, marginTop: 1 }}>
+                      Residence: {rx.hostel_block || 'Hostel B'} Rm {rx.room_number || '204'} · Doctor: <strong>{rx.doctor_name}</strong>
                     </div>
                   </div>
 
@@ -459,7 +526,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
                   {/* Action Button */}
                   {conf.next && (
                     <button
-                      onClick={() => updateStatus({ id: rx.id, status: conf.next })}
+                      onClick={() => handleActionClick(rx, conf)}
                       style={{
                         background: conf.next === 'dispensed' ? '#17322C' : C.primary,
                         color: '#fff',
@@ -476,7 +543,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
                         marginTop: 4,
                       }}
                     >
-                      <PackageCheck size={16} /> {conf.nextLabel}
+                      {conf.next === 'dispensed' ? <KeyRound size={16} /> : <PackageCheck size={16} />} {conf.nextLabel}
                     </button>
                   )}
                 </div>
@@ -531,6 +598,119 @@ export default function PharmacyPortal({ persona = 'student' }) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── 2FA OTP Verification Modal (Pharmacist Dispensing Step) ─── */}
+      {dispenseModalRx && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(23,50,44,0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 85,
+            padding: 16,
+          }}
+          onClick={() => setDispenseModalRx(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: 22,
+              width: '100%',
+              maxWidth: 400,
+              padding: '22px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <KeyRound size={18} color={C.primary} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: C.ink }}>2FA Medicine Handover</div>
+                  <div style={{ fontSize: 11, color: C.soft }}>Verify student pickup authorization</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setDispenseModalRx(null)}
+                style={{ width: 28, height: 28, borderRadius: 8, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div style={{ background: C.bg, borderRadius: 12, padding: 12, fontSize: 12 }}>
+              <div>Patient: <strong>{dispenseModalRx.student_name}</strong></div>
+              <div style={{ color: C.soft, marginTop: 2 }}>Prescription #{dispenseModalRx.id.slice(0, 6)}</div>
+            </div>
+
+            {otpError && (
+              <div style={{ background: C.urgentSoft, color: C.urgent, padding: '8px 12px', borderRadius: 10, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <AlertCircle size={15} /> {otpError}
+              </div>
+            )}
+
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>
+                Enter 4-Digit Student Pickup OTP
+              </label>
+              <input
+                type="text"
+                maxLength={4}
+                autoFocus
+                placeholder="e.g. 4821"
+                value={inputOtp}
+                onChange={(e) => setInputOtp(e.target.value.replace(/\D/g, ''))}
+                style={{
+                  width: '100%',
+                  marginTop: 6,
+                  padding: '12px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${C.primary}`,
+                  fontSize: 22,
+                  fontWeight: 800,
+                  letterSpacing: '0.25em',
+                  textAlign: 'center',
+                  outline: 'none',
+                  fontFamily: 'monospace',
+                }}
+              />
+              <div style={{ fontSize: 11, color: C.soft, marginTop: 6, textAlign: 'center' }}>
+                The student sees this code on their CHAMP Pharmacy screen.
+              </div>
+            </div>
+
+            <button
+              onClick={handleConfirmDispense}
+              disabled={updatingStatus || inputOtp.length < 4}
+              style={{
+                background: C.primary,
+                color: '#fff',
+                padding: '12px 0',
+                borderRadius: 12,
+                fontSize: 13.5,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                opacity: updatingStatus || inputOtp.length < 4 ? 0.6 : 1,
+              }}
+            >
+              <Check size={16} /> {updatingStatus ? 'Verifying & Dispensing…' : 'Verify OTP & Complete Handover'}
+            </button>
           </div>
         </div>
       )}
