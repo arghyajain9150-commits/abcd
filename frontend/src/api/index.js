@@ -28,6 +28,7 @@ export const getEmergencyContacts = ()         => api.get('/emergency');
 // ─── Gemini AI & Outbreak Advisories ─────────────────────────────
 export const triageSymptoms    = (data)        => api.post('/ai/triage', data);
 export const getOutbreakAlerts = ()            => api.get('/ai/outbreaks');
+export const getCampusRadar    = ()            => api.get('/ai/radar');
 
 // ─── Digital Prescriptions ───────────────────────────────────────
 export const createPrescription        = (data)       => api.post('/prescriptions', data);

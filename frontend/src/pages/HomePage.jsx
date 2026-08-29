@@ -61,8 +61,8 @@ export default function HomePage({ onEmergency, onOpenAI }) {
         Campus Health Desk · Block A Ground Floor
       </div>
 
-      {/* Live Campus Outbreak Alert Banner */}
-      <OutbreakBanner onOpenAI={onOpenAI} />
+      {/* Live Campus Outbreak Alert Banner with Radar */}
+      <OutbreakBanner onOpenAI={onOpenAI} onBook={() => navigate('/appointments')} />
 
       {/* Gemini AI Quick Assistant Card */}
       <button

@@ -1,30 +1,38 @@
 -- ============================================================
--- CHAMP Database Schema — Enhanced with Prescriptions, Pharmacy & Outbreaks
+-- CHAMP Database Schema — Realistic Campus Health Ecosystem
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ─── Users ────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        TEXT NOT NULL,
-  email       TEXT UNIQUE NOT NULL,
-  password    TEXT NOT NULL,
-  role        TEXT NOT NULL DEFAULT 'student'
-                CHECK (role IN ('student', 'doctor', 'pharmacist', 'admin')),
-  phone       TEXT,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name              TEXT NOT NULL,
+  email             TEXT UNIQUE NOT NULL,
+  password          TEXT NOT NULL,
+  role              TEXT NOT NULL DEFAULT 'student'
+                      CHECK (role IN ('student', 'doctor', 'pharmacist', 'admin')),
+  phone             TEXT,
+  blood_group       TEXT DEFAULT 'O+',
+  allergies         TEXT DEFAULT 'None reported',
+  hostel_block      TEXT DEFAULT 'Hostel Block A',
+  room_number       TEXT DEFAULT '204',
+  emergency_contact TEXT DEFAULT '+91 98765 00000',
+  created_at        TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ─── Doctors ──────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS doctors (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
-  name        TEXT NOT NULL,
-  specialty   TEXT NOT NULL,
-  bio         TEXT,
-  avatar_url  TEXT,
-  is_active   BOOLEAN DEFAULT TRUE
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID REFERENCES users(id) ON DELETE CASCADE,
+  name            TEXT NOT NULL,
+  qualifications  TEXT NOT NULL DEFAULT 'MBBS, MD',
+  specialty       TEXT NOT NULL,
+  opd_room        TEXT NOT NULL DEFAULT 'Room 101',
+  shift_hours     TEXT NOT NULL DEFAULT '08:30 – 13:30',
+  bio             TEXT,
+  avatar_url      TEXT,
+  is_active       BOOLEAN DEFAULT TRUE
 );
 
 -- ─── Slots ────────────────────────────────────────────────────────
@@ -69,10 +77,10 @@ CREATE TABLE IF NOT EXISTS prescription_items (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   prescription_id  UUID REFERENCES prescriptions(id) ON DELETE CASCADE,
   medicine_name    TEXT NOT NULL,
-  dosage           TEXT NOT NULL, -- e.g. "500mg"
-  frequency        TEXT NOT NULL, -- e.g. "1-0-1 (Morning & Night)"
+  dosage           TEXT NOT NULL,
+  frequency        TEXT NOT NULL,
   duration_days    INTEGER NOT NULL DEFAULT 3,
-  instructions     TEXT -- e.g. "After food with water"
+  instructions     TEXT
 );
 
 -- ─── Pharmacy Inventory ───────────────────────────────────────────
@@ -91,12 +99,34 @@ CREATE TABLE IF NOT EXISTS outbreak_alerts (
   disease_name     TEXT NOT NULL,
   severity         TEXT NOT NULL DEFAULT 'warning'
                      CHECK (severity IN ('info', 'warning', 'critical')),
-  active_cases     INTEGER NOT NULL DEFAULT 12,
-  hotspots         TEXT DEFAULT 'Hostel Blocks B & C, Mess Hall 2',
+  active_cases     INTEGER NOT NULL DEFAULT 0,
+  hotspots         TEXT DEFAULT 'Hostel Block A Floor 2',
   advisory         TEXT NOT NULL,
   prevention_steps TEXT[] NOT NULL DEFAULT '{}',
   is_active        BOOLEAN DEFAULT TRUE,
   updated_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── Student Documents & Lab Reports ──────────────────────────────
+CREATE TABLE IF NOT EXISTS student_documents (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id  UUID REFERENCES users(id) ON DELETE CASCADE,
+  file_name   TEXT NOT NULL,
+  file_type   TEXT NOT NULL DEFAULT 'Lab Report',
+  file_data   TEXT NOT NULL,
+  file_size   TEXT,
+  uploaded_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── Support Tickets ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS support_tickets (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID REFERENCES users(id) ON DELETE CASCADE,
+  category    TEXT NOT NULL,
+  subject     TEXT NOT NULL,
+  message     TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'open',
+  created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ─── Notifications ────────────────────────────────────────────────
@@ -118,47 +148,3 @@ CREATE TABLE IF NOT EXISTS emergency_contacts (
   number      TEXT NOT NULL,
   priority    INTEGER DEFAULT 0
 );
-
--- ============================================================
--- SEED DATA
--- ============================================================
-
--- Emergency Contacts
-INSERT INTO emergency_contacts (label, number, priority) VALUES
-  ('Campus Health Centre', '+91 98765 43210', 1),
-  ('Ambulance', '108', 0),
-  ('Campus Security', '+91 98765 00000', 2)
-ON CONFLICT DO NOTHING;
-
--- Seed Pharmacy Inventory
-INSERT INTO pharmacy_inventory (name, category, stock_quantity, unit, is_available) VALUES
-  ('Paracetamol 500mg', 'Analgesics / Fever', 250, 'tablets', TRUE),
-  ('Azithromycin 500mg', 'Antibiotics', 60, 'tablets', TRUE),
-  ('Cetirizine 10mg', 'Antihistamines / Allergy', 180, 'tablets', TRUE),
-  ('Ciprofloxacin Eye Drops 0.3%', 'Ophthalmic', 45, 'bottles', TRUE),
-  ('ORS (Oral Rehydration Salts)', 'Electrolytes', 120, 'packets', TRUE),
-  ('Pantoprazole 40mg', 'Antacids / Gastric', 150, 'tablets', TRUE),
-  ('Amoxicillin + Clavulanic 625mg', 'Antibiotics', 40, 'tablets', TRUE),
-  ('Ibuprofen 400mg', 'Anti-inflammatory', 100, 'tablets', TRUE),
-  ('Volini Pain Relief Gel', 'Topical / Muscle Pain', 30, 'tubes', TRUE),
-  ('Vitamin C + Zinc Chewable', 'Supplements / Immunity', 300, 'tablets', TRUE)
-ON CONFLICT DO NOTHING;
-
--- Seed Active Campus Outbreak Alert
-INSERT INTO outbreak_alerts (disease_name, severity, active_cases, hotspots, advisory, prevention_steps, is_active) VALUES
-  (
-    'Viral Conjunctivitis (Pink Eye)',
-    'warning',
-    34,
-    'Hostel Blocks A & C, Library Central',
-    'Sudden rise in red, itchy eye cases with watery discharge across hostel blocks. Highly contagious through direct contact and shared surfaces.',
-    ARRAY[
-      'Wash hands frequently with soap and warm water for at least 20 seconds.',
-      'Do not touch or rub your eyes with unwashed hands.',
-      'Avoid sharing towels, bedsheets, eye drops, or eyeglasses.',
-      'Wear protective eyeglasses and isolate in room if experiencing symptoms.',
-      'Book a slot with Dr. Aditi Rao (General Physician) or visit the Health Centre for prescribed antibiotic eye drops.'
-    ],
-    TRUE
-  )
-ON CONFLICT DO NOTHING;

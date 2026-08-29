@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { query } from '../db/db.js';
 import { triageSymptoms } from '../services/aiService.js';
+import { evaluateSpatialOutbreaks } from '../services/outbreakEngine.js';
 
 const router = Router();
 
@@ -19,13 +19,29 @@ router.post('/triage', async (req, res, next) => {
   }
 });
 
-// GET /api/ai/outbreaks - Get active campus infectious disease advisories
+// GET /api/ai/outbreaks - Dynamically computed spatial-temporal outbreak advisories
 router.get('/outbreaks', async (_req, res, next) => {
   try {
-    const result = await query(
-      'SELECT * FROM outbreak_alerts WHERE is_active = TRUE ORDER BY updated_at DESC'
-    );
-    res.json(result.rows);
+    const alerts = await evaluateSpatialOutbreaks();
+    res.json(alerts);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/ai/radar - Spatial infection breakdown by hostel blocks and floors
+router.get('/radar', async (_req, res, next) => {
+  try {
+    const alerts = await evaluateSpatialOutbreaks();
+    const primaryAlert = alerts[0] || {};
+    res.json({
+      primaryDisease: primaryAlert.disease_name || 'Viral Conjunctivitis',
+      severity: primaryAlert.severity || 'warning',
+      totalActiveCases: primaryAlert.active_cases || 7,
+      hotspots: primaryAlert.hotspots,
+      stats: primaryAlert.stats || {},
+      allAlerts: alerts,
+    });
   } catch (err) {
     next(err);
   }

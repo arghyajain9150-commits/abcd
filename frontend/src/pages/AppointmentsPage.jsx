@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Clock, ChevronLeft, ChevronRight, Stethoscope, Calendar, X, AlertCircle, FileText } from 'lucide-react';
+import { CheckCircle2, Clock, ChevronLeft, ChevronRight, Stethoscope, Calendar, X, AlertCircle, FileText, MapPin, Award } from 'lucide-react';
 import { getDoctors, getDoctorSlots, bookAppointment, getMyAppointments, cancelAppointment } from '../api/index.js';
 import { socket, joinQueueRoom, leaveQueueRoom } from '../socket/socket.js';
 
@@ -18,7 +18,7 @@ const C = {
   accentSoft: '#FFF4E5',
 };
 
-const SPECIALTIES = ['All', 'General Physician', 'Dermatology', 'Orthopaedics', 'Gynaecology'];
+const SPECIALTIES = ['All', 'General Physician', 'Dermatology', 'Orthopaedics', 'Gynaecology', 'Wellness & Psychiatry'];
 
 export default function AppointmentsPage() {
   const [view, setView] = useState('book'); // 'book' | 'current'
@@ -126,7 +126,8 @@ function BookFlow({ onBooked }) {
         <div style={{ background: C.surface, borderRadius: 18, padding: 18, border: `1px solid ${C.border}`, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 16, color: C.ink }}>{doctor.name}</div>
-            <div style={{ fontSize: 13, color: C.soft, marginTop: 2 }}>{doctor.specialty} · Campus Clinic Room 102</div>
+            <div style={{ fontSize: 12, color: C.primary, fontWeight: 700 }}>{doctor.qualifications || 'MBBS, MD'} · {doctor.specialty}</div>
+            <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>{doctor.opd_room || 'OPD Room 101'} · Block A Ground Floor</div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C.primary, fontWeight: 700, background: C.primarySoft, padding: '8px 12px', borderRadius: 10 }}>
@@ -176,8 +177,16 @@ function BookFlow({ onBooked }) {
 
         {/* Doctor Summary */}
         <div style={{ background: C.surface, borderRadius: 16, padding: 14, border: `1px solid ${C.border}`, marginBottom: 14 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: C.ink }}>{doctor.name}</div>
-          <div style={{ fontSize: 12, color: C.soft, marginTop: 1 }}>{doctor.specialty}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: C.ink }}>{doctor.name}</div>
+              <div style={{ fontSize: 12, color: C.primary, fontWeight: 700 }}>{doctor.qualifications || 'MBBS, MD'} · {doctor.specialty}</div>
+              <div style={{ fontSize: 11.5, color: C.soft, marginTop: 2 }}>{doctor.opd_room || 'OPD Room 101'} · Shift: {doctor.shift_hours || '08:30 – 13:30'}</div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#1B7A4B', background: '#D8F3E5', padding: '3px 8px', borderRadius: 8 }}>
+              Active on Duty
+            </span>
+          </div>
         </div>
 
         {/* Date Selector */}
@@ -323,12 +332,13 @@ function BookFlow({ onBooked }) {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 14, background: C.primarySoft, color: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Stethoscope size={20} />
+                <div style={{ width: 44, height: 44, borderRadius: 14, background: C.primarySoft, color: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Stethoscope size={22} />
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: C.ink }}>{d.name}</div>
-                  <div style={{ fontSize: 12, color: C.soft }}>{d.specialty}</div>
+                  <div style={{ fontSize: 11.5, color: C.primary, fontWeight: 700 }}>{d.qualifications || 'MBBS, MD'} · {d.specialty}</div>
+                  <div style={{ fontSize: 11, color: C.soft, marginTop: 1 }}>{d.opd_room || 'Room 101'} · Shift: {d.shift_hours || '08:30 – 13:30'}</div>
                 </div>
               </div>
               <ChevronRight size={18} color={C.soft} />
