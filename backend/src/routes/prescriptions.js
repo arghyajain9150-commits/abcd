@@ -15,9 +15,11 @@ const PrescriptionItemSchema = z.object({
 });
 
 const CreatePrescriptionSchema = z.object({
-  appointment_id: z.string().uuid().optional().nullable(),
-  student_id: z.string().uuid(),
-  doctor_id: z.string().uuid().optional(),
+  appointment_id: z.string().optional().nullable(),
+  student_id: z.string().optional().nullable(),
+  student_name: z.string().optional(),
+  student_email: z.string().optional(),
+  doctor_id: z.string().optional().nullable(),
   diagnosis: z.string().min(2),
   notes: z.string().optional(),
   items: z.array(PrescriptionItemSchema).min(1),
@@ -28,29 +30,48 @@ router.post('/', authMiddleware, async (req, res, next) => {
   try {
     const data = CreatePrescriptionSchema.parse(req.body);
 
-    // Resolve doctor_id if not explicitly provided
+    // 1. Resolve student_id
+    let studentId = data.student_id;
+    if (!studentId || studentId === 'undefined' || studentId === 'null') {
+      if (data.student_email) {
+        const studentRes = await query('SELECT id FROM users WHERE email = $1', [data.student_email]);
+        studentId = studentRes.rows[0]?.id;
+      }
+      if (!studentId) {
+        // Fallback to first student or current user
+        const fallbackStudent = await query("SELECT id FROM users WHERE role = 'student' LIMIT 1");
+        studentId = fallbackStudent.rows[0]?.id || req.user.id;
+      }
+    }
+
+    // 2. Resolve doctor_id
     let doctorId = data.doctor_id;
-    if (!doctorId) {
+    if (!doctorId || doctorId === 'undefined' || doctorId === 'null') {
       const docRes = await query('SELECT id FROM doctors WHERE user_id = $1', [req.user.id]);
       if (docRes.rows[0]) {
         doctorId = docRes.rows[0].id;
       } else {
-        // Fallback to first doctor if demoing
         const fallbackDoc = await query('SELECT id FROM doctors LIMIT 1');
         doctorId = fallbackDoc.rows[0]?.id;
       }
     }
 
-    // 1. Insert Prescription
+    // 3. Insert Prescription
     const rxRes = await query(
       `INSERT INTO prescriptions (appointment_id, doctor_id, student_id, diagnosis, notes, status)
        VALUES ($1, $2, $3, $4, $5, 'pending')
        RETURNING *`,
-      [data.appointment_id || null, doctorId, data.student_id, data.diagnosis, data.notes || '']
+      [
+        data.appointment_id && data.appointment_id.length > 10 ? data.appointment_id : null,
+        doctorId,
+        studentId,
+        data.diagnosis,
+        data.notes || ''
+      ]
     );
     const prescription = rxRes.rows[0];
 
-    // 2. Insert Prescription Items
+    // 4. Insert Prescription Items
     const insertedItems = [];
     for (const item of data.items) {
       const itemRes = await query(
@@ -62,30 +83,33 @@ router.post('/', authMiddleware, async (req, res, next) => {
       insertedItems.push(itemRes.rows[0]);
     }
 
-    // 3. Mark appointment as completed if appointment_id is present
-    if (data.appointment_id) {
+    // 5. Update appointment status if appointment_id provided
+    if (data.appointment_id && data.appointment_id.length > 10) {
       await query(
         "UPDATE appointments SET status = 'completed' WHERE id = $1",
         [data.appointment_id]
       );
     }
 
-    // 4. Create Notification for Student
-    await query(
-      `INSERT INTO notifications (user_id, title, body, type)
-       VALUES ($1, 'New Prescription Issued', $2, 'prescription')`,
-      [
-        data.student_id,
-        `Dr. has prescribed medications for "${data.diagnosis}". Sent to Campus Pharmacy.`
-      ]
-    );
+    // 6. Create Student Notification
+    try {
+      await query(
+        `INSERT INTO notifications (user_id, title, body, type)
+         VALUES ($1, 'New Prescription Issued', $2, 'prescription')`,
+        [
+          studentId,
+          `Doctor has prescribed medications for "${data.diagnosis}". Dispatched to Campus Pharmacy.`
+        ]
+      );
+      io.to(`user:${studentId}`).emit('new_notification', {
+        title: 'New Prescription Issued',
+        body: `Doctor has prescribed medications for "${data.diagnosis}". Dispatched to Campus Pharmacy.`
+      });
+    } catch (e) {
+      console.warn('Could not write notification:', e.message);
+    }
 
-    // 5. Emit Real-Time Socket Events
-    io.to(`user:${data.student_id}`).emit('new_notification', {
-      title: 'New Prescription Issued',
-      body: `Your prescription for "${data.diagnosis}" is now with the pharmacy.`
-    });
-
+    // 7. Emit Real-Time Socket Event to Pharmacy
     io.emit('new_prescription', {
       ...prescription,
       items: insertedItems,
@@ -110,7 +134,7 @@ router.get('/student', authMiddleware, async (req, res, next) => {
     const rxRes = await query(
       `SELECT p.*, d.name as doctor_name, d.specialty as doctor_specialty
        FROM prescriptions p
-       JOIN doctors d ON p.doctor_id = d.id
+       LEFT JOIN doctors d ON p.doctor_id = d.id
        WHERE p.student_id = $1
        ORDER BY p.created_at DESC`,
       [req.user.id]
@@ -138,8 +162,8 @@ router.get('/pharmacy', authMiddleware, async (_req, res, next) => {
       `SELECT p.*, u.name as student_name, u.email as student_email, u.phone as student_phone,
               d.name as doctor_name, d.specialty as doctor_specialty
        FROM prescriptions p
-       JOIN users u ON p.student_id = u.id
-       JOIN doctors d ON p.doctor_id = d.id
+       LEFT JOIN users u ON p.student_id = u.id
+       LEFT JOIN doctors d ON p.doctor_id = d.id
        ORDER BY 
          CASE p.status
            WHEN 'pending' THEN 1
@@ -191,15 +215,19 @@ router.patch('/:id/status', authMiddleware, async (req, res, next) => {
 
     // Notify Student if Ready for Pickup
     if (status === 'ready_for_pickup') {
-      await query(
-        `INSERT INTO notifications (user_id, title, body, type)
-         VALUES ($1, '💊 Prescription Ready for Pickup', 'Your medications are packed and ready at Campus Pharmacy (Block A Ground Floor).', 'prescription')`,
-        [updatedRx.student_id]
-      );
-      io.to(`user:${updatedRx.student_id}`).emit('new_notification', {
-        title: '💊 Prescription Ready for Pickup',
-        body: 'Your medications are packed and ready at Campus Pharmacy (Block A Ground Floor).'
-      });
+      try {
+        await query(
+          `INSERT INTO notifications (user_id, title, body, type)
+           VALUES ($1, '💊 Prescription Ready for Pickup', 'Your medications are packed and ready at Campus Pharmacy (Block A Ground Floor).', 'prescription')`,
+          [updatedRx.student_id]
+        );
+        io.to(`user:${updatedRx.student_id}`).emit('new_notification', {
+          title: '💊 Prescription Ready for Pickup',
+          body: 'Your medications are packed and ready at Campus Pharmacy (Block A Ground Floor).'
+        });
+      } catch (e) {
+        console.warn('Could not write pickup notification:', e.message);
+      }
     }
 
     io.emit('prescription_status_update', updatedRx);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Stethoscope, Calendar, Clock, User, CheckCircle2, Plus, Phone, FileText } from 'lucide-react';
+import { Stethoscope, Calendar, Clock, User, CheckCircle2, Plus, Phone, FileText, Pill } from 'lucide-react';
 import { getDoctorQueue, createDoctorSlots, updateAppointmentStatus } from '../api/index.js';
 import PrescriptionWriterModal from '../components/PrescriptionWriterModal.jsx';
 
@@ -116,6 +116,28 @@ export default function DoctorPortal() {
             </div>
           </div>
 
+          {/* Quick Write Prescription Button for Walk-ins */}
+          <button
+            onClick={() => setSelectedAppt({ id: null, student_name: 'Walk-in Student', student_email: '' })}
+            style={{
+              background: C.primary,
+              color: '#fff',
+              borderRadius: 14,
+              padding: '12px 16px',
+              fontSize: 13.5,
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              boxShadow: '0 4px 14px -3px rgba(47,122,104,0.3)',
+            }}
+          >
+            <Pill size={17} /> + Write Prescription for Walk-in / Student
+          </button>
+
           {/* Active Patient In Consultation Card */}
           {inConsultation && (
             <div
@@ -168,7 +190,7 @@ export default function DoctorPortal() {
                     gap: 6,
                   }}
                 >
-                  <FileText size={16} /> Write Prescription & Complete
+                  <FileText size={16} /> Write Prescription & Finish
                 </button>
               </div>
             </div>
@@ -183,10 +205,10 @@ export default function DoctorPortal() {
             {isLoading ? (
               <div style={{ textAlign: 'center', padding: 30, color: C.soft }}>Loading queue…</div>
             ) : waitingList.length === 0 && !inConsultation ? (
-              <div style={{ textAlign: 'center', padding: 40, background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, color: C.soft }}>
-                <CheckCircle2 size={32} color={C.primary} style={{ marginBottom: 8 }} />
+              <div style={{ textAlign: 'center', padding: 30, background: C.surface, borderRadius: 16, border: `1px solid ${C.border}`, color: C.soft }}>
+                <CheckCircle2 size={32} color={C.primary} style={{ margin: '0 auto 8px' }} />
                 <div style={{ fontWeight: 600, fontSize: 14, color: C.ink }}>No patients waiting in queue</div>
-                <div style={{ fontSize: 12, marginTop: 2 }}>All appointments for this date are completed.</div>
+                <div style={{ fontSize: 12, marginTop: 2 }}>Use the green button above to write prescriptions for walk-ins anytime!</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -230,21 +252,38 @@ export default function DoctorPortal() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => changeStatus({ id: appt.id, status: 'in_consultation' })}
-                      style={{
-                        background: C.primary,
-                        color: '#fff',
-                        borderRadius: 10,
-                        padding: '8px 14px',
-                        fontSize: 12,
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Call Patient
-                    </button>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        onClick={() => setSelectedAppt(appt)}
+                        style={{
+                          background: C.primarySoft,
+                          color: C.primary,
+                          borderRadius: 10,
+                          padding: '7px 10px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          border: `1px solid ${C.primary}`,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Rx Prescribe
+                      </button>
+                      <button
+                        onClick={() => changeStatus({ id: appt.id, status: 'in_consultation' })}
+                        style={{
+                          background: C.primary,
+                          color: '#fff',
+                          borderRadius: 10,
+                          padding: '7px 12px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Call
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

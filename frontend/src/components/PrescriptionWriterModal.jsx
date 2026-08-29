@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Plus, Trash2, Pill, Send, CheckCircle2 } from 'lucide-react';
+import { X, Plus, Trash2, Pill, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { createPrescription } from '../api/index.js';
 
 const C = {
@@ -12,6 +12,7 @@ const C = {
   border: '#E1E3DA',
   bg: '#F5F7F3',
   urgent: '#D6483C',
+  urgentSoft: '#FBE7E4',
 };
 
 const COMMON_DRUGS = [
@@ -25,8 +26,11 @@ const COMMON_DRUGS = [
 
 export default function PrescriptionWriterModal({ appointment, onClose }) {
   const qc = useQueryClient();
+  const [studentName, setStudentName] = useState(appointment?.student_name || 'Campus Student');
+  const [studentEmail, setStudentEmail] = useState(appointment?.student_email || '');
   const [diagnosis, setDiagnosis] = useState('');
   const [notes, setNotes] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [items, setItems] = useState([
     { medicine_name: 'Paracetamol 500mg', dosage: '500mg', frequency: '1-0-1 (Morning & Night)', duration_days: 3, instructions: 'After food' },
   ]);
@@ -42,6 +46,9 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
       setTimeout(() => {
         onClose();
       }, 1500);
+    },
+    onError: (err) => {
+      setErrorMsg(err.response?.data?.error || err.message || 'Failed to dispatch prescription');
     },
   });
 
@@ -76,11 +83,17 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
   };
 
   const handleSubmit = () => {
-    if (!diagnosis.trim()) return;
+    if (!diagnosis.trim()) {
+      setErrorMsg('Please enter a clinical diagnosis.');
+      return;
+    }
+    setErrorMsg('');
     submitRx({
-      appointment_id: appointment.id,
-      student_id: appointment.student_id,
-      doctor_id: appointment.doctor_id,
+      appointment_id: appointment?.id || null,
+      student_id: appointment?.student_id || null,
+      student_name: studentName,
+      student_email: studentEmail,
+      doctor_id: appointment?.doctor_id || null,
       diagnosis,
       notes,
       items: items.filter((it) => it.medicine_name.trim()),
@@ -132,7 +145,7 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
               <Pill size={18} /> Digital Prescription Writer
             </div>
             <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>
-              Patient: {appointment.student_name} ({appointment.student_email})
+              Patient: {studentName} {studentEmail ? `(${studentEmail})` : ''}
             </div>
           </div>
           <button
@@ -158,11 +171,41 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
             <CheckCircle2 size={48} color={C.primary} style={{ margin: '0 auto 16px' }} />
             <div style={{ fontWeight: 700, fontSize: 18, color: C.ink }}>Prescription Dispatched!</div>
             <div style={{ fontSize: 13, color: C.soft, marginTop: 6 }}>
-              Sent to Campus Pharmacy & student's medical records.
+              Sent to Campus Pharmacy fulfillment queue & student's medical records.
             </div>
           </div>
         ) : (
           <div style={{ overflowY: 'auto', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {errorMsg && (
+              <div style={{ background: C.urgentSoft, color: C.urgent, padding: '10px 14px', borderRadius: 12, fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <AlertCircle size={16} /> {errorMsg}
+              </div>
+            )}
+
+            {/* Patient Name if Walk-in */}
+            {!appointment && (
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>
+                  Student Name / ID
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rahul Sharma"
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    marginTop: 6,
+                    padding: '8px 12px',
+                    borderRadius: 12,
+                    border: `1px solid ${C.border}`,
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
+                />
+              </div>
+            )}
+
             {/* Diagnosis */}
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>
