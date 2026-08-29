@@ -98,10 +98,10 @@ export default function HomePage({ onEmergency, onOpenAI }) {
 
       {/* Quick actions */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-        <QuickAction icon={Calendar}   label="Book Doctor" onClick={() => navigate('/appointments')} />
-        <QuickAction icon={Pill}        label="Pharmacy & Rx" onClick={() => navigate('/pharmacy')} />
-        <QuickAction icon={HeartPulse}  label="Wellness"      onClick={() => navigate('/wellness')} />
-        <QuickAction icon={ShieldAlert} label="Emergency 108" onClick={onEmergency} highlight />
+        <QuickAction icon={Calendar}   label="Book Appointment" onClick={() => navigate('/appointments')} />
+        <QuickAction icon={Pill}        label="Pharmacy & Rx"    onClick={() => navigate('/pharmacy')} />
+        <QuickAction icon={HeartPulse}  label="Wellness"         onClick={() => navigate('/wellness')} />
+        <QuickAction icon={ShieldAlert} label="Emergency 108"    onClick={onEmergency} highlight />
       </div>
 
       {/* Upcoming appointment */}

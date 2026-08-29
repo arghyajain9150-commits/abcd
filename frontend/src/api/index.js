@@ -41,6 +41,12 @@ export const createDoctorSlots         = (data)       => api.post('/doctor/slots
 export const updateAppointmentStatus   = (id, status) => api.patch(`/doctor/appointments/${id}/status`, { status });
 export const getStudentHistory         = (studentId)  => api.get(`/doctor/student/${studentId}/history`);
 
+// ─── Medical Documents & Lab Reports ──────────────────────────────
+export const uploadDocument            = (data)       => api.post('/documents/upload', data);
+export const getMyDocuments            = ()           => api.get('/documents/student');
+export const getStudentDocuments       = (studentId)  => api.get(`/documents/student/${studentId}`);
+export const deleteDocument            = (id)         => api.delete(`/documents/${id}`);
+
 // ─── Pharmacy Inventory ───────────────────────────────────────────
 export const getPharmacyInventory      = ()           => api.get('/pharmacy/inventory');
 export const updatePharmacyInventory   = (id, data)   => api.patch(`/pharmacy/inventory/${id}`, data);

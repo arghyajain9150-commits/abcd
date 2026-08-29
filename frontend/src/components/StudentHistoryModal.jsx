@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { X, FileText, AlertTriangle, ShieldCheck, Calendar, Pill, Stethoscope, User } from 'lucide-react';
-import { getStudentHistory } from '../api/index.js';
+import { X, FileText, AlertTriangle, ShieldCheck, Calendar, Pill, Stethoscope, User, Download, UploadCloud } from 'lucide-react';
+import { getStudentHistory, getStudentDocuments } from '../api/index.js';
 
 const C = {
   primary: '#2F7A68',
@@ -20,6 +20,12 @@ export default function StudentHistoryModal({ studentId, studentName, onPrescrib
   const { data, isLoading } = useQuery({
     queryKey: ['student-history', studentId],
     queryFn: () => getStudentHistory(studentId).then((r) => r.data),
+    enabled: !!studentId,
+  });
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ['student-documents', studentId],
+    queryFn: () => getStudentDocuments(studentId).then((r) => r.data),
     enabled: !!studentId,
   });
 
@@ -175,6 +181,70 @@ export default function StudentHistoryModal({ studentId, studentName, onPrescrib
                     <strong>Known Allergies:</strong> {student?.allergies || 'None reported'}
                   </div>
                 </div>
+              </div>
+
+              {/* Uploaded Lab Reports & Files */}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: C.soft, textTransform: 'uppercase', marginBottom: 10, letterSpacing: '0.04em' }}>
+                  Student Uploaded Reports & Scans ({documents.length})
+                </div>
+
+                {documents.length === 0 ? (
+                  <div style={{ background: C.bg, padding: '12px 14px', borderRadius: 12, fontSize: 11.5, color: C.soft }}>
+                    No external lab files or scans attached by student.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        style={{
+                          background: C.surface,
+                          borderRadius: 12,
+                          padding: '10px 12px',
+                          border: `1px solid ${C.border}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                          <FileText size={16} color={C.primary} style={{ flexShrink: 0 }} />
+                          <div style={{ overflow: 'hidden' }}>
+                            <div style={{ fontWeight: 700, fontSize: 12.5, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {doc.file_name}
+                            </div>
+                            <div style={{ fontSize: 10.5, color: C.soft }}>
+                              {doc.file_type} · {doc.file_size} · {new Date(doc.uploaded_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            </div>
+                          </div>
+                        </div>
+
+                        <a
+                          href={doc.file_data}
+                          download={doc.file_name}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            background: C.primarySoft,
+                            color: C.primary,
+                            borderRadius: 8,
+                            padding: '6px 10px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            textDecoration: 'none',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Download size={13} /> View File
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Past Digital Prescriptions */}

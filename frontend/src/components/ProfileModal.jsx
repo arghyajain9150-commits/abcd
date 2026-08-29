@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, User, Heart, ShieldAlert, Home, Phone, Check, Sparkles, CreditCard } from 'lucide-react';
+import { X, User, Heart, ShieldAlert, Home, Phone, Check, Sparkles, CreditCard, UploadCloud, FileText } from 'lucide-react';
 import { updateProfile } from '../api/index.js';
 import { useAuthStore } from '../store/store.js';
+import DocumentUploadModal from './DocumentUploadModal.jsx';
 
 const C = {
   primary: '#2F7A68',
@@ -31,6 +32,7 @@ export default function ProfileModal({ onClose }) {
   const [roomNumber, setRoomNumber] = useState(user?.room_number || '204');
   const [emergencyContact, setEmergencyContact] = useState(user?.emergency_contact || '+91 98765 00000');
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [docModalOpen, setDocModalOpen] = useState(false);
 
   const { mutate: saveProfile, isPending } = useMutation({
     mutationFn: (payload) => updateProfile(payload),
@@ -172,8 +174,36 @@ export default function ProfileModal({ onClose }) {
           </div>
         </div>
 
+        {/* Upload Medical Files Action Bar */}
+        <div style={{ padding: '12px 20px 0' }}>
+          <button
+            onClick={() => setDocModalOpen(true)}
+            style={{
+              width: '100%',
+              background: '#fff',
+              border: `1.5px dashed ${C.primary}`,
+              borderRadius: 14,
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              color: C.ink,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <UploadCloud size={18} color={C.primary} />
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700 }}>Attach Medical Reports / Prescriptions</div>
+                <div style={{ fontSize: 10.5, color: C.soft }}>Upload lab tests, blood work & scan PDFs</div>
+              </div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: C.primary }}>Upload +</span>
+          </button>
+        </div>
+
         {/* Editable Form */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Blood Group */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>
@@ -317,6 +347,8 @@ export default function ProfileModal({ onClose }) {
             )}
           </button>
         </div>
+
+        {docModalOpen && <DocumentUploadModal onClose={() => setDocModalOpen(false)} />}
       </div>
     </div>
   );

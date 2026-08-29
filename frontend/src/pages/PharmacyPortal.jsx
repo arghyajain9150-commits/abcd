@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pill, CheckCircle2, Clock, PackageCheck, AlertCircle, Search, User, FileText, Stethoscope } from 'lucide-react';
-import { getPharmacyPrescriptions, updatePrescriptionStatus, getPharmacyInventory, getStudentPrescriptions } from '../api/index.js';
+import { Pill, CheckCircle2, Clock, PackageCheck, AlertCircle, Search, User, FileText, Stethoscope, UploadCloud, Download } from 'lucide-react';
+import { getPharmacyPrescriptions, updatePrescriptionStatus, getPharmacyInventory, getStudentPrescriptions, getMyDocuments } from '../api/index.js';
 import { useAuthStore } from '../store/store.js';
+import DocumentUploadModal from '../components/DocumentUploadModal.jsx';
 
 const C = {
   primary: '#2F7A68',
@@ -30,6 +31,7 @@ export default function PharmacyPortal() {
   const user = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'inventory' | 'my_records'
   const [search, setSearch] = useState('');
+  const [docModalOpen, setDocModalOpen] = useState(false);
 
   // Prescriptions for Pharmacist
   const { data: orders = [], isLoading: ordersLoading } = useQuery({
@@ -44,10 +46,16 @@ export default function PharmacyPortal() {
     queryFn: () => getPharmacyInventory().then((r) => r.data),
   });
 
-  // Student's personal records
+  // Student's personal prescriptions
   const { data: myRecords = [] } = useQuery({
     queryKey: ['student-prescriptions'],
     queryFn: () => getStudentPrescriptions().then((r) => r.data),
+  });
+
+  // Student's uploaded lab files
+  const { data: myDocs = [] } = useQuery({
+    queryKey: ['my-documents'],
+    queryFn: () => getMyDocuments().then((r) => r.data),
   });
 
   const { mutate: updateStatus } = useMutation({
@@ -110,7 +118,7 @@ export default function PharmacyPortal() {
             cursor: 'pointer',
           }}
         >
-          My Medical Rx ({myRecords.length})
+          My Medical Records ({myRecords.length + myDocs.length})
         </button>
         <button
           onClick={() => setActiveTab('inventory')}
@@ -232,72 +240,179 @@ export default function PharmacyPortal() {
         </div>
       )}
 
-      {/* ─── TAB 2: Student's Personal Medical Records ─── */}
+      {/* ─── TAB 2: Student's Personal Medical Records & Uploads ─── */}
       {activeTab === 'my_records' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {myRecords.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 40, background: C.surface, borderRadius: 18, border: `1px solid ${C.border}`, color: C.soft }}>
-              <FileText size={36} color={C.border} style={{ marginBottom: 8 }} />
-              <div style={{ fontWeight: 700, fontSize: 14, color: C.ink }}>No digital prescriptions yet</div>
-              <div style={{ fontSize: 12, marginTop: 2 }}>Prescriptions from your doctor consultations will appear here.</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Upload Medical Document Card */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
+              borderRadius: 18,
+              padding: 16,
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 4px 14px -3px rgba(23,50,44,0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <UploadCloud size={20} color="#fff" />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>Attach Medical Reports & Scans</div>
+                <div style={{ fontSize: 11, opacity: 0.85 }}>Upload blood tests & prior prescriptions</div>
+              </div>
             </div>
-          ) : (
-            myRecords.map((rx) => {
-              const conf = STATUS_CONFIG[rx.status] || STATUS_CONFIG.pending;
-              return (
-                <div
-                  key={rx.id}
-                  style={{
-                    background: C.surface,
-                    borderRadius: 18,
-                    padding: 16,
-                    border: `1px solid ${C.border}`,
-                    boxShadow: '0 2px 8px -2px rgba(23,50,44,0.06)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, background: conf.bg, color: conf.color, padding: '2px 8px', borderRadius: 99, textTransform: 'uppercase' }}>
-                      {conf.label}
-                    </span>
-                    <span style={{ fontSize: 11, color: C.soft }}>
-                      {new Date(rx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                  </div>
+            <button
+              onClick={() => setDocModalOpen(true)}
+              style={{
+                background: '#fff',
+                color: C.primary,
+                fontWeight: 700,
+                fontSize: 12,
+                padding: '8px 12px',
+                borderRadius: 10,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Upload +
+            </button>
+          </div>
 
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: C.ink }}>
-                      Diagnosis: {rx.diagnosis}
-                    </div>
-                    <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-                      Prescribed by <strong>{rx.doctor_name} ({rx.doctor_specialty})</strong>
-                    </div>
-                  </div>
-
-                  <div style={{ background: C.bg, borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {rx.items?.map((item, i) => (
-                      <div key={i} style={{ fontSize: 12 }}>
-                        <div style={{ fontWeight: 700, color: C.ink }}>
-                          💊 {item.medicine_name} — {item.dosage}
+          {/* Attached Files List */}
+          {myDocs.length > 0 && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.soft, textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.04em' }}>
+                Uploaded Lab Reports & Scans ({myDocs.length})
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {myDocs.map((doc) => (
+                  <div
+                    key={doc.id}
+                    style={{
+                      background: C.surface,
+                      borderRadius: 14,
+                      padding: '12px 14px',
+                      border: `1px solid ${C.border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+                      <FileText size={18} color={C.primary} style={{ flexShrink: 0 }} />
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: C.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {doc.file_name}
                         </div>
-                        <div style={{ fontSize: 11, color: C.soft, marginTop: 1 }}>
-                          Schedule: {item.frequency} for {item.duration_days} days · {item.instructions}
+                        <div style={{ fontSize: 11, color: C.soft }}>
+                          {doc.file_type} · {doc.file_size} · {new Date(doc.uploaded_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                         </div>
                       </div>
-                    ))}
-                  </div>
-
-                  {rx.notes && (
-                    <div style={{ fontSize: 11.5, color: C.soft, background: C.primarySoft, padding: '8px 10px', borderRadius: 8 }}>
-                      <strong>Doctor Advice:</strong> {rx.notes}
                     </div>
-                  )}
-                </div>
-              );
-            })
+
+                    <a
+                      href={doc.file_data}
+                      download={doc.file_name}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        background: C.primarySoft,
+                        color: C.primary,
+                        borderRadius: 8,
+                        padding: '6px 10px',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        textDecoration: 'none',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Download size={13} /> View
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
+
+          {/* Digital Prescriptions History */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.soft, textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.04em' }}>
+              Campus Doctor Prescriptions ({myRecords.length})
+            </div>
+
+            {myRecords.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 30, background: C.surface, borderRadius: 18, border: `1px solid ${C.border}`, color: C.soft }}>
+                <FileText size={32} color={C.border} style={{ margin: '0 auto 8px' }} />
+                <div style={{ fontWeight: 700, fontSize: 13, color: C.ink }}>No digital prescriptions yet</div>
+                <div style={{ fontSize: 11.5, marginTop: 2 }}>Prescriptions from your doctor consultations will appear here.</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {myRecords.map((rx) => {
+                  const conf = STATUS_CONFIG[rx.status] || STATUS_CONFIG.pending;
+                  return (
+                    <div
+                      key={rx.id}
+                      style={{
+                        background: C.surface,
+                        borderRadius: 18,
+                        padding: 16,
+                        border: `1px solid ${C.border}`,
+                        boxShadow: '0 2px 8px -2px rgba(23,50,44,0.06)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, background: conf.bg, color: conf.color, padding: '2px 8px', borderRadius: 99, textTransform: 'uppercase' }}>
+                          {conf.label}
+                        </span>
+                        <span style={{ fontSize: 11, color: C.soft }}>
+                          {new Date(rx.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 15, color: C.ink }}>
+                          Diagnosis: {rx.diagnosis}
+                        </div>
+                        <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
+                          Prescribed by <strong>{rx.doctor_name} ({rx.doctor_specialty})</strong>
+                        </div>
+                      </div>
+
+                      <div style={{ background: C.bg, borderRadius: 12, padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {rx.items?.map((item, i) => (
+                          <div key={i} style={{ fontSize: 12 }}>
+                            <div style={{ fontWeight: 700, color: C.ink }}>
+                              💊 {item.medicine_name} — {item.dosage}
+                            </div>
+                            <div style={{ fontSize: 11, color: C.soft, marginTop: 1 }}>
+                              Schedule: {item.frequency} for {item.duration_days} days · {item.instructions}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {rx.notes && (
+                        <div style={{ fontSize: 11.5, color: C.soft, background: C.primarySoft, padding: '8px 10px', borderRadius: 8 }}>
+                          <strong>Doctor Advice:</strong> {rx.notes}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -360,6 +475,8 @@ export default function PharmacyPortal() {
           </div>
         </div>
       )}
+
+      {docModalOpen && <DocumentUploadModal onClose={() => setDocModalOpen(false)} />}
     </div>
   );
 }
