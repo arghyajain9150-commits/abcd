@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Home, Calendar, Pill, HeartPulse, HelpCircle, Bell, ShieldAlert, Sparkles, Stethoscope, LogOut, User, CreditCard } from 'lucide-react';
+import { Home, Calendar, Pill, HeartPulse, HelpCircle, Bell, ShieldAlert, Sparkles, Stethoscope, LogOut, User, CreditCard, WifiOff } from 'lucide-react';
 import { getUnreadCount } from '../api/index.js';
 import { useAuthStore, useUIStore } from '../store/store.js';
 import { socket } from '../socket/socket.js';
@@ -40,6 +40,7 @@ export default function AppShell() {
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiInitialQuery, setAiInitialQuery] = useState('');
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // Active Role Switcher for Hackathon Demo: 'student' | 'doctor' | 'pharmacist'
   const [activePersona, setActivePersona] = useState('student');
@@ -58,6 +59,17 @@ export default function AppShell() {
     const handler = () => setLiveUnread((n) => n + 1);
     socket.on('new_notification', handler);
     return () => socket.off('new_notification', handler);
+  }, []);
+
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
   }, []);
 
   const hasAlert = liveUnread > 0;
@@ -87,6 +99,14 @@ export default function AppShell() {
       `}</style>
 
       <div style={{ width: '100%', maxWidth: 440, height: '94vh', maxHeight: 860, background: C.frame, borderRadius: 28, boxShadow: '0 20px 60px -20px rgba(23,50,44,0.35)', border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+
+        {/* Offline Banner */}
+        {!isOnline && (
+          <div style={{ background: C.urgent, color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 12px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, zIndex: 100 }}>
+            <WifiOff size={13} />
+            <span>Offline · Reconnecting to Campus Health Network…</span>
+          </div>
+        )}
 
         {/* ─── Top Header with Brand & Demo Role Switcher ─── */}
         <div style={{ padding: '14px 18px 10px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}` }}>

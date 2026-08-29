@@ -11,10 +11,11 @@ export const getDoctors      = ()              => api.get('/doctors');
 export const getDoctorSlots  = (id, date)      => api.get(`/doctors/${id}/slots?date=${date}`);
 
 // Appointments
-export const bookAppointment   = (data)        => api.post('/appointments', data);
-export const getMyAppointments = ()            => api.get('/appointments/mine');
-export const cancelAppointment = (id)          => api.patch(`/appointments/${id}/cancel`);
-export const getQueuePosition  = (doctorId)    => api.get(`/appointments/queue/${doctorId}`);
+export const bookAppointment        = (data)           => api.post('/appointments', data);
+export const getMyAppointments      = ()               => api.get('/appointments/mine');
+export const cancelAppointment      = (id)             => api.patch(`/appointments/${id}/cancel`);
+export const rescheduleAppointment  = (id, new_slot_id)=> api.patch(`/appointments/${id}/reschedule`, { new_slot_id });
+export const getQueuePosition       = (doctorId)       => api.get(`/appointments/queue/${doctorId}`);
 
 // Notifications
 export const getNotifications  = ()            => api.get('/notifications');

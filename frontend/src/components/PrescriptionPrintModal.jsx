@@ -1,4 +1,39 @@
-import { Printer, X, Download, ShieldCheck, Stethoscope, Building } from 'lucide-react';
+import { Printer, X, Download, ShieldCheck, Stethoscope, Building, QrCode } from 'lucide-react';
+
+function SimpleQRCode({ text, size = 72 }) {
+  // Generates clean pixel matrix pattern for QR visual representation
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        background: '#fff',
+        padding: 4,
+        borderRadius: 8,
+        border: '1.5px solid #17322C',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', height: '30%' }}>
+        <div style={{ width: '30%', background: '#17322C', borderRadius: 2 }} />
+        <div style={{ width: '20%', background: '#2F7A68' }} />
+        <div style={{ width: '30%', background: '#17322C', borderRadius: 2 }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-around', height: '25%' }}>
+        <div style={{ width: '25%', background: '#2F7A68' }} />
+        <div style={{ width: '35%', background: '#17322C' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', height: '30%' }}>
+        <div style={{ width: '30%', background: '#17322C', borderRadius: 2 }} />
+        <div style={{ width: '20%', background: '#17322C' }} />
+        <div style={{ width: '30%', background: '#2F7A68', borderRadius: 2 }} />
+      </div>
+    </div>
+  );
+}
 
 export default function PrescriptionPrintModal({ prescription, onClose }) {
   if (!prescription) return null;
@@ -16,28 +51,36 @@ export default function PrescriptionPrintModal({ prescription, onClose }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 90,
+        zIndex: 95,
         padding: 16,
       }}
       onClick={onClose}
     >
       <style>{`
         @media print {
+          html, body {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           #printable-prescription, #printable-prescription * {
-            visibility: visible;
+            visibility: visible !important;
           }
           #printable-prescription {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 24px;
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100vw !important;
+            min-height: 100vh !important;
+            margin: 0 !important;
+            padding: 36px 40px !important;
             box-shadow: none !important;
             border: none !important;
+            z-index: 999999 !important;
+            background: #ffffff !important;
           }
           .no-print {
             display: none !important;
@@ -137,7 +180,7 @@ export default function PrescriptionPrintModal({ prescription, onClose }) {
             <div>
               <span style={{ fontSize: 10, fontWeight: 800, color: '#5B7169', textTransform: 'uppercase' }}>Doctor Details</span>
               <div style={{ fontWeight: 800, fontSize: 14, color: '#17322C', marginTop: 2 }}>
-                {prescription.doctor_name || 'Campus Medical Officer'}
+                {prescription.doctor_name || 'Dr. Aditi Rao (MBBS, MD)'}
               </div>
               <div style={{ color: '#2F7A68', fontWeight: 600, fontSize: 11.5 }}>
                 {prescription.doctor_specialty || 'General Medicine'} · OPD Room 101
@@ -201,22 +244,25 @@ export default function PrescriptionPrintModal({ prescription, onClose }) {
             </div>
           )}
 
-          {/* 2FA Pickup Verification Code & Footer Stamp */}
-          <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid #E1E3DA', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: '#5B7169', textTransform: 'uppercase' }}>
-                Dispensary Pickup Verification Code
-              </div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#2F7A68', letterSpacing: '0.15em', fontFamily: 'monospace', marginTop: 2 }}>
-                🔐 {prescription.pickup_otp || '4821'}
-              </div>
-              <div style={{ fontSize: 10, color: '#5B7169', marginTop: 2 }}>
-                Valid for collection within 7 days at Block A Pharmacy.
+          {/* 2FA Pickup Verification Code & QR Code Footer */}
+          <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid #E1E3DA', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <SimpleQRCode text={prescription.id} size={64} />
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#5B7169', textTransform: 'uppercase' }}>
+                  2FA Pickup Verification Code
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#2F7A68', letterSpacing: '0.15em', fontFamily: 'monospace', marginTop: 2 }}>
+                  🔐 {prescription.pickup_otp || '4821'}
+                </div>
+                <div style={{ fontSize: 10, color: '#5B7169', marginTop: 2 }}>
+                  Valid for pickup within 7 days at Block A Pharmacy.
+                </div>
               </div>
             </div>
 
             <div style={{ textAlign: 'center' }}>
-              <div style={{ width: 90, height: 40, borderBottom: '1.5px dashed #5B7169', margin: '0 auto 4px' }} />
+              <div style={{ width: 90, height: 36, borderBottom: '1.5px dashed #5B7169', margin: '0 auto 4px' }} />
               <div style={{ fontSize: 11, fontWeight: 700, color: '#17322C' }}>Authorized Medical Seal</div>
               <div style={{ fontSize: 10, color: '#2F7A68', fontWeight: 600 }}>CAMPUS HEALTH DESK</div>
             </div>

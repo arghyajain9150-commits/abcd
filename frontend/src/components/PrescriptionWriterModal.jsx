@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Plus, Trash2, Pill, Send, CheckCircle2, AlertCircle, AlertTriangle, Search, Check, ShieldAlert, Radio } from 'lucide-react';
+import { X, Plus, Trash2, Pill, Send, CheckCircle2, AlertCircle, AlertTriangle, Search, Check, ShieldAlert, Radio, Sparkles } from 'lucide-react';
 import { createPrescription, getPharmacyInventory } from '../api/index.js';
 
 const C = {
@@ -34,8 +34,9 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
   const [notes, setNotes] = useState('');
   const [contagiousTag, setContagiousTag] = useState('none');
   const [errorMsg, setErrorMsg] = useState('');
+  const [focusedInput, setFocusedInput] = useState(null); // active item index focused for typeahead
   const [items, setItems] = useState([
-    { medicine_name: 'Paracetamol 500mg', dosage: '500mg', frequency: '1-0-1 (Morning & Night)', duration_days: 3, instructions: 'After food' },
+    { medicine_name: 'Paracetamol 500mg', dosage: '500mg', frequency: '1-0-1 (Morning & Night)', duration_days: 3, instructions: 'After food with water' },
   ]);
   const [success, setSuccess] = useState(false);
 
@@ -69,7 +70,7 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
         ...prev,
         {
           medicine_name: drug.name,
-          dosage: drug.dosage || '500mg',
+          dosage: drug.dosage || '1 tablet',
           frequency: drug.freq || '1-0-1 (After Food)',
           duration_days: drug.dur || 3,
           instructions: drug.instructions || 'After meals with water',
@@ -91,6 +92,24 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
     setItems((prev) =>
       prev.map((item, i) => (i === idx ? { ...item, [field]: val } : item))
     );
+  };
+
+  const selectDrugForIndex = (idx, drug) => {
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === idx
+          ? {
+              ...item,
+              medicine_name: drug.name,
+              dosage: drug.dosage || '1 tablet (500mg)',
+              frequency: '1-0-1 (After Food)',
+              duration_days: 3,
+              instructions: 'After food with water',
+            }
+          : item
+      )
+    );
+    setFocusedInput(null);
   };
 
   const handleSubmit = () => {
@@ -257,41 +276,7 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
             </select>
           </div>
 
-          {/* Quick-Select Common Formulary from Live Inventory */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 10.5, fontWeight: 800, color: C.soft, textTransform: 'uppercase' }}>
-                Dispensary Formulary (Live Stock)
-              </span>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {inventory.slice(0, 6).map((drug) => (
-                <button
-                  key={drug.id}
-                  type="button"
-                  onClick={() => addItem({ name: drug.name, dosage: '1 tablet', freq: '1-0-1', dur: 3, instructions: 'After meals' })}
-                  style={{
-                    background: drug.is_available ? C.primarySoft : '#F2F2EE',
-                    color: drug.is_available ? C.primary : C.soft,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '5px 10px',
-                    borderRadius: 8,
-                    border: `1px solid ${drug.is_available ? '#C3DED3' : '#DDD'}`,
-                    cursor: drug.is_available ? 'pointer' : 'not-allowed',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}
-                >
-                  <span>{drug.name}</span>
-                  <span style={{ fontSize: 9.5, opacity: 0.8 }}>({drug.stock_quantity})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Prescribed Medications Dynamic List */}
+          {/* Prescribed Medications Dynamic List with Typeahead */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>
@@ -306,65 +291,131 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {items.map((item, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    background: C.bg,
-                    borderRadius: 12,
-                    padding: 10,
-                    border: `1px solid ${C.border}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 6,
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      placeholder="Medicine name..."
-                      value={item.medicine_name}
-                      onChange={(e) => updateItem(idx, 'medicine_name', e.target.value)}
-                      style={{ flex: 2, padding: '7px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, fontWeight: 600 }}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Dosage (500mg)"
-                      value={item.dosage}
-                      onChange={(e) => updateItem(idx, 'dosage', e.target.value)}
-                      style={{ flex: 1, padding: '7px 8px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12 }}
-                    />
-                    {items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeItem(idx)}
-                        style={{ color: C.urgent, padding: 4, cursor: 'pointer', border: 'none', background: 'none' }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {items.map((item, idx) => {
+                const queryText = item.medicine_name.trim().toLowerCase();
+                const matchedSuggestions = inventory.filter((drug) =>
+                  queryText.length > 0 && drug.name.toLowerCase().includes(queryText)
+                );
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr', gap: 6 }}>
-                    <input
-                      type="text"
-                      placeholder="Schedule: 1-0-1 (After Food)"
-                      value={item.frequency}
-                      onChange={(e) => updateItem(idx, 'frequency', e.target.value)}
-                      style={{ padding: '6px 8px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 11.5 }}
-                    />
-                    <input
-                      type="number"
-                      placeholder="Days"
-                      min={1}
-                      value={item.duration_days}
-                      onChange={(e) => updateItem(idx, 'duration_days', parseInt(e.target.value) || 1)}
-                      style={{ padding: '6px 8px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 11.5 }}
-                    />
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      background: C.bg,
+                      borderRadius: 14,
+                      padding: 12,
+                      border: `1px solid ${C.border}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                      position: 'relative',
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <div style={{ flex: 2, position: 'relative' }}>
+                        <input
+                          type="text"
+                          placeholder="Type drug name (e.g. Paracetamol)..."
+                          value={item.medicine_name}
+                          onFocus={() => setFocusedInput(idx)}
+                          onChange={(e) => updateItem(idx, 'medicine_name', e.target.value)}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, fontWeight: 600 }}
+                        />
+
+                        {/* Live Typeahead Floating Dropdown */}
+                        {focusedInput === idx && matchedSuggestions.length > 0 && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              right: 0,
+                              background: '#fff',
+                              borderRadius: 10,
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                              border: `1px solid ${C.border}`,
+                              zIndex: 30,
+                              maxHeight: 160,
+                              overflowY: 'auto',
+                              marginTop: 4,
+                            }}
+                          >
+                            {matchedSuggestions.map((sug) => (
+                              <div
+                                key={sug.id}
+                                onMouseDown={() => selectDrugForIndex(idx, sug)}
+                                style={{
+                                  padding: '8px 12px',
+                                  fontSize: 12,
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  cursor: 'pointer',
+                                  borderBottom: '1px solid #F0F0F0',
+                                }}
+                              >
+                                <div>
+                                  <strong style={{ color: C.ink }}>{sug.name}</strong>
+                                  <div style={{ fontSize: 10.5, color: C.soft }}>{sug.category}</div>
+                                </div>
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    color: sug.is_available ? '#1B7A4B' : C.urgent,
+                                    background: sug.is_available ? '#D8F3E5' : C.urgentSoft,
+                                    padding: '2px 6px',
+                                    borderRadius: 6,
+                                  }}
+                                >
+                                  {sug.is_available ? `🟢 ${sug.stock_quantity} in stock` : '🔴 Out of stock'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Dosage (500mg)"
+                        value={item.dosage}
+                        onChange={(e) => updateItem(idx, 'dosage', e.target.value)}
+                        style={{ flex: 1, padding: '8px 8px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12 }}
+                      />
+
+                      {items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeItem(idx)}
+                          style={{ color: C.urgent, padding: 4, cursor: 'pointer', border: 'none', background: 'none' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr', gap: 6 }}>
+                      <input
+                        type="text"
+                        placeholder="Schedule: 1-0-1 (After Food)"
+                        value={item.frequency}
+                        onChange={(e) => updateItem(idx, 'frequency', e.target.value)}
+                        style={{ padding: '6px 8px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 11.5 }}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Days"
+                        min={1}
+                        value={item.duration_days}
+                        onChange={(e) => updateItem(idx, 'duration_days', parseInt(e.target.value) || 1)}
+                        style={{ padding: '6px 8px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 11.5 }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

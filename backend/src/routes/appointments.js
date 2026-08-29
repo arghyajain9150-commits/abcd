@@ -15,8 +15,8 @@ router.get('/mine', async (req, res, next) => {
   try {
     const result = await query(
       `SELECT a.id, a.status, a.queue_pos, a.booked_at, a.notes,
-              s.slot_time, s.slot_date,
-              d.id as doctor_id, d.name as doctor_name, d.specialty
+              s.slot_time, s.slot_date, s.id as slot_id,
+              d.id as doctor_id, d.name as doctor_name, d.specialty, d.opd_room, d.qualifications
        FROM appointments a
        JOIN slots s ON a.slot_id = s.id
        JOIN doctors d ON a.doctor_id = d.id
@@ -45,6 +45,24 @@ router.post('/', async (req, res, next) => {
       return res.status(409).json({ error: 'Slot is no longer available' });
     }
     const slot = slotCheck.rows[0];
+
+    // Conflict Check: Check if student already has a confirmed appointment at this exact date & time
+    const conflictCheck = await query(
+      `SELECT a.id, d.name as doctor_name 
+       FROM appointments a
+       JOIN slots s ON a.slot_id = s.id
+       JOIN doctors d ON a.doctor_id = d.id
+       WHERE a.student_id = $1
+         AND s.slot_date = $2
+         AND s.slot_time = $3
+         AND a.status = 'confirmed'`,
+      [req.user.id, slot.slot_date, slot.slot_time]
+    );
+    if (conflictCheck.rows.length > 0) {
+      return res.status(409).json({
+        error: `Time conflict: You already have a confirmed appointment with ${conflictCheck.rows[0].doctor_name} at ${slot.slot_time}. Please pick another time slot.`
+      });
+    }
 
     // Count existing confirmed appointments for this doctor/date to assign queue pos
     const queueResult = await query(
@@ -118,6 +136,68 @@ router.post('/', async (req, res, next) => {
     });
 
     res.status(201).json({ appointment, queuePos, notification: notif });
+  } catch (err) { next(err); }
+});
+
+// ── PATCH /api/appointments/:id/reschedule ───────────────────────
+router.patch('/:id/reschedule', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { new_slot_id } = req.body;
+
+    if (!new_slot_id) {
+      return res.status(400).json({ error: 'new_slot_id is required' });
+    }
+
+    // 1. Verify existing appointment ownership
+    const apptResult = await query(
+      `SELECT a.*, s.slot_date as old_date, s.slot_time as old_time, d.name as doctor_name
+       FROM appointments a
+       JOIN slots s ON a.slot_id = s.id
+       JOIN doctors d ON a.doctor_id = d.id
+       WHERE a.id = $1 AND a.student_id = $2`,
+      [id, req.user.id]
+    );
+    if (apptResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+    const appt = apptResult.rows[0];
+
+    // 2. Check new slot is available
+    const newSlotCheck = await query(
+      'SELECT * FROM slots WHERE id = $1 AND is_booked = FALSE',
+      [new_slot_id]
+    );
+    if (newSlotCheck.rows.length === 0) {
+      return res.status(409).json({ error: 'Selected new slot is no longer available' });
+    }
+    const newSlot = newSlotCheck.rows[0];
+
+    // 3. Free old slot and reserve new slot
+    await query('UPDATE slots SET is_booked = FALSE WHERE id = $1', [appt.slot_id]);
+    await query('UPDATE slots SET is_booked = TRUE WHERE id = $1', [new_slot_id]);
+
+    // 4. Update appointment
+    const updateRes = await query(
+      `UPDATE appointments 
+       SET slot_id = $1, status = 'confirmed', booked_at = NOW()
+       WHERE id = $2
+       RETURNING *`,
+      [new_slot_id, id]
+    );
+
+    // 5. Recompute queues
+    await recomputeQueue(appt.doctor_id, appt.old_date);
+    await recomputeQueue(appt.doctor_id, newSlot.slot_date);
+
+    await createNotification({
+      userId: req.user.id,
+      title: 'Appointment Rescheduled 🔄',
+      body: `Your visit with ${appt.doctor_name} has been moved to ${newSlot.slot_date} at ${newSlot.slot_time}.`,
+      type: 'info',
+    });
+
+    res.json({ message: 'Appointment rescheduled successfully', appointment: updateRes.rows[0] });
   } catch (err) { next(err); }
 });
 
@@ -203,7 +283,6 @@ router.get('/queue/:doctorId', async (req, res, next) => {
       [doctorId, date]
     );
 
-    // Return only the current user's queue position
     const myEntry = result.rows.find((r) => r.student_id === req.user.id);
     res.json({
       queuePos: myEntry?.queue_pos ?? null,
@@ -212,7 +291,7 @@ router.get('/queue/:doctorId', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Helper: recompute queue numbers after a cancellation
+// Helper: recompute queue numbers after a cancellation or reschedule
 async function recomputeQueue(doctorId, slotDate) {
   const result = await query(
     `SELECT a.id FROM appointments a

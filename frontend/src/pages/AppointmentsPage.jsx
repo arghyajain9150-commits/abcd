@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, Clock, ChevronLeft, ChevronRight, Stethoscope, Calendar, X, AlertCircle, FileText, MapPin, Award } from 'lucide-react';
-import { getDoctors, getDoctorSlots, bookAppointment, getMyAppointments, cancelAppointment } from '../api/index.js';
+import { CheckCircle2, Clock, ChevronLeft, ChevronRight, Stethoscope, Calendar, X, AlertCircle, FileText, MapPin, Award, RefreshCw, Check } from 'lucide-react';
+import { getDoctors, getDoctorSlots, bookAppointment, getMyAppointments, cancelAppointment, rescheduleAppointment } from '../api/index.js';
 import { socket, joinQueueRoom, leaveQueueRoom } from '../socket/socket.js';
 
 const C = {
@@ -71,6 +71,7 @@ function BookFlow({ onBooked }) {
   const [bookedAppt, setBookedAppt] = useState(null);
   const [notes, setNotes]         = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState(paramSpecialty || 'All');
+  const [bookingError, setBookingError] = useState('');
 
   useEffect(() => {
     if (paramSpecialty) {
@@ -99,11 +100,14 @@ function BookFlow({ onBooked }) {
     mutationFn: () => bookAppointment({ doctor_id: doctor.id, slot_id: slot.id, notes }),
     onSuccess: (res) => {
       setBookedAppt(res.data);
+      setBookingError('');
       setStep('done');
       qc.invalidateQueries(['appointments']);
       joinQueueRoom(doctor.id, targetDate);
     },
-    onError: (e) => alert(e.response?.data?.error || 'Booking failed'),
+    onError: (e) => {
+      setBookingError(e.response?.data?.error || 'Booking failed. Please select another slot.');
+    },
   });
 
   const filteredDoctors = doctors.filter((doc) =>
@@ -120,102 +124,130 @@ function BookFlow({ onBooked }) {
         <div style={{ fontSize: 13, color: C.soft, marginBottom: 6 }}>
           Booked with <strong>{doctor?.name} ({doctor?.specialty})</strong>
         </div>
-        <div style={{ fontSize: 13, color: C.soft, marginBottom: 24 }}>
-          Queue Token: <strong style={{ color: C.primary, fontSize: 15 }}>#{bookedAppt?.queuePos || 1}</strong> · Date: {targetDate}
+        <div style={{ fontSize: 12, color: C.soft, marginBottom: 24 }}>
+          Date: {new Date(slot?.slot_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · Time: {slot?.slot_time}
         </div>
-        <button onClick={onBooked} style={{ background: C.primary, color: '#fff', padding: '12px 28px', borderRadius: 14, fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-          View My Appointments
+        <button
+          onClick={onBooked}
+          style={{ background: C.primary, color: '#fff', padding: '12px 28px', borderRadius: 14, fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+        >
+          View in My Appointments
         </button>
       </div>
     );
   }
 
+  // Step 3: Confirm Details
   if (step === 'confirm') {
     return (
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <BackBtn onClick={() => setStep('slots')} />
-        <div style={{ background: C.surface, borderRadius: 18, padding: 18, border: `1px solid ${C.border}`, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 16, color: C.ink }}>{doctor.name}</div>
-            <div style={{ fontSize: 12, color: C.primary, fontWeight: 700 }}>{doctor.qualifications || 'MBBS, MD'} · {doctor.specialty}</div>
-            <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>{doctor.opd_room || 'OPD Room 101'} · Block A Ground Floor</div>
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C.primary, fontWeight: 700, background: C.primarySoft, padding: '8px 12px', borderRadius: 10 }}>
-            <Clock size={15} />
-            Slot: {String(slot.slot_time).slice(0, 5)} · Date: {targetDate === todayStr ? 'Today' : targetDate}
+        <div style={{ background: C.surface, borderRadius: 18, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: C.ink }}>Confirm Appointment</div>
+
+          <div style={{ background: C.bg, borderRadius: 14, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: C.soft }}>Doctor:</span>
+              <strong style={{ fontSize: 13, color: C.ink }}>{doctor?.name}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: C.soft }}>Specialty:</span>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: C.primary }}>{doctor?.specialty}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: C.soft }}>OPD Room:</span>
+              <span style={{ fontSize: 12, color: C.ink }}>{doctor?.opd_room || 'Room 101'}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12, color: C.soft }}>Date & Time:</span>
+              <strong style={{ fontSize: 13, color: C.ink }}>{slot?.slot_date} at {slot?.slot_time}</strong>
+            </div>
           </div>
 
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>
-              Reason for Visit / Symptoms (Optional)
+              Symptoms / Reason for Visit (Optional)
             </label>
             <textarea
-              placeholder="e.g. Mild headache and cough since yesterday..."
+              rows={3}
+              placeholder="e.g. Mild fever, dry cough for 2 days, headache"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              rows={2}
               style={{
                 width: '100%',
                 marginTop: 6,
-                padding: '8px 12px',
+                padding: '10px 12px',
                 borderRadius: 12,
                 border: `1px solid ${C.border}`,
                 fontSize: 13,
                 outline: 'none',
-                color: C.ink,
                 resize: 'none',
               }}
             />
           </div>
-        </div>
 
-        <button
-          onClick={() => book()}
-          disabled={isPending}
-          style={{ width: '100%', background: C.primary, color: '#fff', padding: '14px 0', borderRadius: 14, fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', opacity: isPending ? 0.7 : 1 }}
-        >
-          {isPending ? 'Confirming Appointment…' : 'Confirm & Generate Queue Token'}
-        </button>
+          {bookingError && (
+            <div style={{ background: C.urgentSoft, color: C.urgent, padding: '10px 12px', borderRadius: 10, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <AlertCircle size={16} /> {bookingError}
+            </div>
+          )}
+
+          <button
+            onClick={() => book()}
+            disabled={isPending}
+            style={{
+              background: C.primary,
+              color: '#fff',
+              padding: '13px 0',
+              borderRadius: 14,
+              fontSize: 14,
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              marginTop: 4,
+              opacity: isPending ? 0.7 : 1,
+            }}
+          >
+            {isPending ? 'Confirming Booking…' : 'Confirm & Reserve Slot'}
+          </button>
+        </div>
       </div>
     );
   }
 
+  // Step 2: Select Date & Slot
   if (step === 'slots') {
     return (
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <BackBtn onClick={() => setStep('doctors')} />
 
-        {/* Doctor Summary */}
-        <div style={{ background: C.surface, borderRadius: 16, padding: 14, border: `1px solid ${C.border}`, marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: C.ink }}>{doctor.name}</div>
-              <div style={{ fontSize: 12, color: C.primary, fontWeight: 700 }}>{doctor.qualifications || 'MBBS, MD'} · {doctor.specialty}</div>
-              <div style={{ fontSize: 11.5, color: C.soft, marginTop: 2 }}>{doctor.opd_room || 'OPD Room 101'} · Shift: {doctor.shift_hours || '08:30 – 13:30'}</div>
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#1B7A4B', background: '#D8F3E5', padding: '3px 8px', borderRadius: 8 }}>
-              Active on Duty
-            </span>
+        {/* Selected Doctor Summary Card */}
+        <div style={{ background: C.surface, borderRadius: 16, padding: 14, border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: C.primarySoft, color: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Stethoscope size={22} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: C.ink }}>{doctor?.name}</div>
+            <div style={{ fontSize: 12, color: C.primary, fontWeight: 600 }}>{doctor?.specialty} · {doctor?.opd_room || 'Room 101'}</div>
           </div>
         </div>
 
-        {/* Date Selector */}
-        <div style={{ marginBottom: 16 }}>
+        {/* Multi-Date Selector Bar */}
+        <div>
           <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>
-            Select Clinic Date
+            Choose Date
           </label>
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: 6 }}>
             <button
               onClick={() => setTargetDate(todayStr)}
               style={{
-                flex: 1,
                 padding: '8px 0',
                 borderRadius: 10,
                 fontSize: 12,
                 fontWeight: 700,
-                background: targetDate === todayStr ? C.primary : C.bg,
-                color: targetDate === todayStr ? '#fff' : C.ink,
+                background: targetDate === todayStr ? C.primary : C.surface,
+                color: targetDate === todayStr ? '#fff' : C.soft,
                 border: `1px solid ${targetDate === todayStr ? C.primary : C.border}`,
                 cursor: 'pointer',
               }}
@@ -225,27 +257,34 @@ function BookFlow({ onBooked }) {
             <button
               onClick={() => setTargetDate(tomorrowStr)}
               style={{
-                flex: 1,
                 padding: '8px 0',
                 borderRadius: 10,
                 fontSize: 12,
                 fontWeight: 700,
-                background: targetDate === tomorrowStr ? C.primary : C.bg,
-                color: targetDate === tomorrowStr ? '#fff' : C.ink,
+                background: targetDate === tomorrowStr ? C.primary : C.surface,
+                color: targetDate === tomorrowStr ? '#fff' : C.soft,
                 border: `1px solid ${targetDate === tomorrowStr ? C.primary : C.border}`,
                 cursor: 'pointer',
               }}
             >
               Tomorrow
             </button>
+            <input
+              type="date"
+              value={targetDate}
+              min={todayStr}
+              onChange={(e) => setTargetDate(e.target.value)}
+              style={{
+                padding: '6px 8px',
+                borderRadius: 10,
+                fontSize: 11.5,
+                border: `1px solid ${C.border}`,
+                background: C.surface,
+                fontWeight: 600,
+                color: C.ink,
+              }}
+            />
           </div>
-          <input
-            type="date"
-            min={todayStr}
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 12 }}
-          />
         </div>
 
         {/* Time Slots Grid */}
@@ -361,9 +400,12 @@ function BookFlow({ onBooked }) {
   );
 }
 
-// ── Current Appointments ─────────────────────────────────────────
+// ── Current Appointments with Reschedule Modal ───────────────────
 function CurrentAppointments({ onBook }) {
   const qc = useQueryClient();
+  const [rescheduleAppt, setRescheduleAppt] = useState(null);
+  const [rescheduleDate, setRescheduleDate] = useState(new Date().toISOString().split('T')[0]);
+
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['appointments'],
     queryFn: () => getMyAppointments().then((r) => r.data),
@@ -375,6 +417,21 @@ function CurrentAppointments({ onBook }) {
       qc.invalidateQueries(['appointments']);
     },
     onError: (e) => alert(e.response?.data?.error || 'Could not cancel'),
+  });
+
+  const { data: reschedSlots = [], isLoading: loadingReschedSlots } = useQuery({
+    queryKey: ['slots', rescheduleAppt?.doctor_id, rescheduleDate],
+    queryFn: () => getDoctorSlots(rescheduleAppt.doctor_id, rescheduleDate).then((r) => r.data),
+    enabled: !!rescheduleAppt,
+  });
+
+  const { mutate: doReschedule, isPending: rescheduling } = useMutation({
+    mutationFn: ({ id, new_slot_id }) => rescheduleAppointment(id, new_slot_id),
+    onSuccess: () => {
+      qc.invalidateQueries(['appointments']);
+      setRescheduleAppt(null);
+    },
+    onError: (e) => alert(e.response?.data?.error || 'Reschedule failed'),
   });
 
   if (isLoading) return <div style={{ textAlign: 'center', padding: 30, color: C.soft }}>Loading your appointments…</div>;
@@ -412,7 +469,7 @@ function CurrentAppointments({ onBook }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: C.ink }}>{appt.doctor_name}</div>
-                <div style={{ fontSize: 12, color: C.soft }}>{appt.specialty} · OPD Room 102</div>
+                <div style={{ fontSize: 12, color: C.soft }}>{appt.specialty} · {appt.opd_room || 'Room 101'}</div>
               </div>
               <div
                 style={{
@@ -441,7 +498,26 @@ function CurrentAppointments({ onBook }) {
             )}
 
             {appt.status === 'confirmed' && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+                <button
+                  onClick={() => setRescheduleAppt(appt)}
+                  style={{
+                    background: C.primarySoft,
+                    color: C.primary,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <RefreshCw size={13} /> Reschedule Slot
+                </button>
+
                 <button
                   onClick={() => {
                     if (window.confirm('Are you sure you want to cancel this appointment?')) {
@@ -462,13 +538,112 @@ function CurrentAppointments({ onBook }) {
                     gap: 4,
                   }}
                 >
-                  <X size={13} /> Cancel Appointment
+                  <X size={13} /> Cancel
                 </button>
               </div>
             )}
           </div>
         );
       })}
+
+      {/* ─── Reschedule Slot Modal ─── */}
+      {rescheduleAppt && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(23,50,44,0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 85,
+            padding: 16,
+          }}
+          onClick={() => setRescheduleAppt(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: 22,
+              width: '100%',
+              maxWidth: 420,
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <RefreshCw size={18} color={C.primary} />
+                <div style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>Reschedule Appointment</div>
+              </div>
+              <button
+                onClick={() => setRescheduleAppt(null)}
+                style={{ width: 28, height: 28, borderRadius: 8, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: 12, color: C.soft }}>
+              Pick a new consultation date and time for <strong>{rescheduleAppt.doctor_name}</strong>:
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Select Date</label>
+              <input
+                type="date"
+                value={rescheduleDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setRescheduleDate(e.target.value)}
+                style={{ width: '100%', marginTop: 4, padding: '8px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 13 }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>
+                Select New Slot ({reschedSlots.filter((s) => !s.is_booked).length} available)
+              </label>
+
+              {loadingReschedSlots ? (
+                <div style={{ textAlign: 'center', padding: 20, color: C.soft }}>Loading available slots…</div>
+              ) : reschedSlots.filter((s) => !s.is_booked).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 18, background: C.bg, borderRadius: 10, color: C.soft, fontSize: 12 }}>
+                  No available slots for this date.
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginTop: 6 }}>
+                  {reschedSlots
+                    .filter((s) => !s.is_booked)
+                    .map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => doReschedule({ id: rescheduleAppt.id, new_slot_id: s.id })}
+                        disabled={rescheduling}
+                        style={{
+                          padding: '8px 0',
+                          borderRadius: 10,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          background: C.primarySoft,
+                          color: C.primary,
+                          border: `1px solid ${C.primary}`,
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {String(s.slot_time).slice(0, 5)}
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
