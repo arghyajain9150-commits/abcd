@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Clock, ChevronLeft, ChevronRight, Stethoscope, Calendar, X, AlertCircle, FileText, MapPin, Award } from 'lucide-react';
 import { getDoctors, getDoctorSlots, bookAppointment, getMyAppointments, cancelAppointment } from '../api/index.js';
@@ -61,12 +62,22 @@ export default function AppointmentsPage() {
 // ── Book Flow ────────────────────────────────────────────────────
 function BookFlow({ onBooked }) {
   const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const paramSpecialty = searchParams.get('specialty');
+
   const [step, setStep]           = useState('doctors'); // doctors | slots | confirm | done
   const [doctor, setDoctor]       = useState(null);
   const [slot, setSlot]           = useState(null);
   const [bookedAppt, setBookedAppt] = useState(null);
   const [notes, setNotes]         = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('All');
+  const [selectedSpecialty, setSelectedSpecialty] = useState(paramSpecialty || 'All');
+
+  useEffect(() => {
+    if (paramSpecialty) {
+      const matched = SPECIALTIES.find(s => s.toLowerCase().includes(paramSpecialty.toLowerCase()));
+      if (matched) setSelectedSpecialty(matched);
+    }
+  }, [paramSpecialty]);
 
   // Date Selection: Today, Tomorrow, or Custom Date
   const todayStr = new Date().toISOString().split('T')[0];

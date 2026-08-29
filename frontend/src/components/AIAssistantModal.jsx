@@ -287,7 +287,7 @@ export default function AIAssistantModal({ initialQuery = '', onClose }) {
                   <button
                     onClick={() => {
                       onClose();
-                      navigate('/appointments');
+                      navigate(`/appointments?specialty=${encodeURIComponent(m.recommendation.recommendedSpecialty || '')}`);
                     }}
                     style={{
                       background: C.primary,
@@ -299,12 +299,12 @@ export default function AIAssistantModal({ initialQuery = '', onClose }) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 8,
+                      gap: 6,
                       border: 'none',
                       cursor: 'pointer',
                     }}
                   >
-                    Book Slot with {m.recommendation.recommendedDoctor}
+                    <Calendar size={15} /> Book Slot with {m.recommendation.recommendedDoctor}
                     <ArrowRight size={15} />
                   </button>
                 </div>

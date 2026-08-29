@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pill, CheckCircle2, Clock, PackageCheck, AlertCircle, Search, User, FileText, Stethoscope, UploadCloud, Download, KeyRound, QrCode, ShieldCheck, X } from 'lucide-react';
+import { Pill, CheckCircle2, Clock, PackageCheck, AlertCircle, Search, User, FileText, Stethoscope, UploadCloud, Download, KeyRound, QrCode, ShieldCheck, X, Printer, Eye, BellRing, Filter, Check, Building2 } from 'lucide-react';
 import { getPharmacyPrescriptions, updatePrescriptionStatus, getPharmacyInventory, getStudentPrescriptions, getMyDocuments } from '../api/index.js';
 import { useAuthStore } from '../store/store.js';
 import DocumentUploadModal from '../components/DocumentUploadModal.jsx';
+import PrescriptionPrintModal from '../components/PrescriptionPrintModal.jsx';
+import DocumentViewerModal from '../components/DocumentViewerModal.jsx';
 
 const C = {
   primary: '#2F7A68',
@@ -18,6 +20,8 @@ const C = {
   accent: '#E3A542',
   accentSoft: '#FFF4E5',
 };
+
+const CATEGORIES = ['All', 'Analgesic', 'Antibiotic', 'Antipyretic', 'Eye Care', 'Gastro', 'First Aid', 'Allergy'];
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', bg: C.accentSoft, color: C.accent, next: 'preparing', nextLabel: 'Start Packing' },
@@ -34,7 +38,14 @@ export default function PharmacyPortal({ persona = 'student' }) {
   const [activeTab, setActiveTab] = useState(isPharmacist ? 'orders' : 'my_rx');
   const [rxFilter, setRxFilter] = useState('active'); // 'active' | 'all'
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [restockAlerts, setRestockAlerts] = useState({});
+
+  // Modals
   const [docModalOpen, setDocModalOpen] = useState(false);
+  const [printRx, setPrintRx] = useState(null);
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   // OTP Verification Modal for Pharmacist Handover
   const [dispenseModalRx, setDispenseModalRx] = useState(null);
@@ -102,6 +113,10 @@ export default function PharmacyPortal({ persona = 'student' }) {
     updateStatus({ id: dispenseModalRx.id, status: 'dispensed', otp: inputOtp.trim() });
   };
 
+  const handleRequestRestock = (drugId, drugName) => {
+    setRestockAlerts((prev) => ({ ...prev, [drugId]: true }));
+  };
+
   // Pharmacist filtered orders
   const activeOrders = allOrders.filter((o) => o.status !== 'dispensed');
   const displayedOrders = (rxFilter === 'active' ? activeOrders : allOrders).filter((o) =>
@@ -111,20 +126,39 @@ export default function PharmacyPortal({ persona = 'student' }) {
   );
 
   // Filtered inventory
-  const filteredInventory = inventory.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase()) ||
-    item.category.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredInventory = inventory.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) || item.category.toLowerCase().includes(search.toLowerCase());
+    const matchesCat = selectedCategory === 'All' || item.category.toLowerCase().includes(selectedCategory.toLowerCase());
+    const matchesStock = !inStockOnly || item.is_available;
+    return matchesSearch && matchesCat && matchesStock;
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Header */}
-      <div>
-        <div className="champ-heading" style={{ fontSize: 22, fontWeight: 700, color: C.ink }}>
-          {isPharmacist ? 'Pharmacy Fulfillment Desk' : 'My Prescriptions & Pharmacy'}
+      {/* Operating Hours Card */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
+          borderRadius: 20,
+          padding: '14px 16px',
+          color: '#fff',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          boxShadow: '0 8px 24px -6px rgba(23,50,44,0.25)',
+        }}
+      >
+        <div>
+          <div className="champ-heading" style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>
+            {isPharmacist ? 'Dispensary Fulfillment Desk' : 'Campus Pharmacy & Health Desk'}
+          </div>
+          <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>
+            📍 Block A Ground Floor · ⏰ Mon–Sat: 8:00 AM – 8:00 PM
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-          Block A Ground Floor · {isPharmacist ? '2FA Dispensary & Inventory Manager' : 'Digital Health & Medication Pass'}
+
+        <div style={{ background: 'rgba(255,255,255,0.18)', padding: '4px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700, textAlign: 'right' }}>
+          <span>Emergency: <strong>108</strong></span>
         </div>
       </div>
 
@@ -325,6 +359,28 @@ export default function PharmacyPortal({ persona = 'student' }) {
                       <strong>Doctor Advice:</strong> {rx.notes}
                     </div>
                   )}
+
+                  {/* 1-Click Print / Save PDF Button */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 2 }}>
+                    <button
+                      onClick={() => setPrintRx(rx)}
+                      style={{
+                        background: '#fff',
+                        color: C.primary,
+                        border: `1.5px solid ${C.primary}`,
+                        padding: '6px 14px',
+                        borderRadius: 10,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Printer size={14} /> Print Rx / Save PDF
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -394,26 +450,45 @@ export default function PharmacyPortal({ persona = 'student' }) {
                     </div>
                   </div>
 
-                  <a
-                    href={doc.file_data}
-                    download={doc.file_name}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      background: C.primarySoft,
-                      color: C.primary,
-                      borderRadius: 8,
-                      padding: '6px 10px',
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <Download size={13} /> View
-                  </a>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => setPreviewDoc(doc)}
+                      style={{
+                        background: C.primarySoft,
+                        color: C.primary,
+                        borderRadius: 8,
+                        padding: '6px 10px',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Eye size={13} /> Preview
+                    </button>
+                    <a
+                      href={doc.file_data}
+                      download={doc.file_name}
+                      style={{
+                        background: C.bg,
+                        color: C.ink,
+                        borderRadius: 8,
+                        padding: '6px 10px',
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        textDecoration: 'none',
+                        border: `1px solid ${C.border}`,
+                      }}
+                    >
+                      <Download size={13} />
+                    </a>
+                  </div>
                 </div>
               ))}
             </div>
@@ -422,7 +497,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 3: PHARMACIST FULFILLMENT QUEUE (2FA SECURE HANDOVER)
+          VIEW 3: PHARMACIST FULFILLMENT QUEUE
       ──────────────────────────────────────────────────────────────── */}
       {isPharmacist && activeTab === 'orders' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -554,21 +629,68 @@ export default function PharmacyPortal({ persona = 'student' }) {
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 4: INVENTORY
+          VIEW 4: INVENTORY & STOCK MANAGEMENT
       ──────────────────────────────────────────────────────────────── */}
       {activeTab === 'inventory' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Search bar with Clear Button */}
           <div style={{ position: 'relative' }}>
             <Search size={16} color={C.soft} style={{ position: 'absolute', left: 12, top: 12 }} />
             <input
               type="text"
-              placeholder="Search campus medication..."
+              placeholder="Search medication name or category..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 13 }}
+              style={{ width: '100%', padding: '10px 36px', borderRadius: 12, border: `1.5px solid ${C.border}`, fontSize: 13 }}
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                style={{ position: 'absolute', right: 10, top: 10, background: '#E1E3DA', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}
+              >
+                <X size={12} color={C.ink} />
+              </button>
+            )}
           </div>
 
+          {/* Category Filter Chips & In-Stock Toggle */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 999,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    background: selectedCategory === cat ? C.primary : C.surface,
+                    color: selectedCategory === cat ? '#fff' : C.soft,
+                    border: `1px solid ${selectedCategory === cat ? C.primary : C.border}`,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+              <span style={{ color: C.soft }}>Showing <strong>{filteredInventory.length}</strong> medicines</span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: C.ink, fontWeight: 600 }}>
+                <input
+                  type="checkbox"
+                  checked={inStockOnly}
+                  onChange={(e) => setInStockOnly(e.target.checked)}
+                />
+                In-Stock Only
+              </label>
+            </div>
+          </div>
+
+          {/* Medicines Cards */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {filteredInventory.map((item) => (
               <div
@@ -588,13 +710,43 @@ export default function PharmacyPortal({ persona = 'student' }) {
                   <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>Category: {item.category}</div>
                 </div>
 
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: item.stock_quantity < 20 ? C.urgent : C.primary }}>
                     {item.stock_quantity} {item.unit}
                   </div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: item.is_available ? C.primary : C.urgent, textTransform: 'uppercase' }}>
                     {item.is_available ? 'In Stock' : 'Out of Stock'}
                   </div>
+
+                  {!item.is_available && (
+                    <button
+                      onClick={() => handleRequestRestock(item.id, item.name)}
+                      style={{
+                        background: restockAlerts[item.id] ? '#D8F3E5' : C.primarySoft,
+                        color: restockAlerts[item.id] ? '#1B7A4B' : C.primary,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        marginTop: 2,
+                      }}
+                    >
+                      {restockAlerts[item.id] ? (
+                        <>
+                          <Check size={11} /> Alert Set!
+                        </>
+                      ) : (
+                        <>
+                          <BellRing size={11} /> Notify Restock
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -715,7 +867,14 @@ export default function PharmacyPortal({ persona = 'student' }) {
         </div>
       )}
 
+      {/* Document Upload Modal */}
       {docModalOpen && <DocumentUploadModal onClose={() => setDocModalOpen(false)} />}
+
+      {/* Printable Prescription Modal */}
+      {printRx && <PrescriptionPrintModal prescription={printRx} onClose={() => setPrintRx(null)} />}
+
+      {/* Inline Document Preview Modal */}
+      {previewDoc && <DocumentViewerModal document={previewDoc} onClose={() => setPreviewDoc(null)} />}
     </div>
   );
 }
