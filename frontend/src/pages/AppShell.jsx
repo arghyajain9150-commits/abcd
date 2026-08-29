@@ -68,7 +68,7 @@ export default function AppShell() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', justifyContent: 'center', padding: '16px 8px', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ minHeight: '100vh', height: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 8px', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
@@ -82,14 +82,14 @@ export default function AppShell() {
         }
         .emergency-fab { animation: pulse-ring 2.4s infinite; }
         @media (prefers-reduced-motion: reduce) { .emergency-fab { animation: none; } }
-        .content-scroll::-webkit-scrollbar { width: 4px; }
-        .content-scroll::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 4px; }
+        .content-scroll::-webkit-scrollbar { width: 5px; }
+        .content-scroll::-webkit-scrollbar-thumb { background: #C8D1CC; border-radius: 6px; }
       `}</style>
 
-      <div style={{ width: '100%', maxWidth: 430, minHeight: 820, background: C.frame, borderRadius: 28, boxShadow: '0 20px 60px -20px rgba(23,50,44,0.35)', border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ width: '100%', maxWidth: 440, height: '94vh', maxHeight: 860, background: C.frame, borderRadius: 28, boxShadow: '0 20px 60px -20px rgba(23,50,44,0.35)', border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
 
         {/* ─── Top Header with Brand & Demo Role Switcher ─── */}
-        <div style={{ padding: '16px 18px 12px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ padding: '14px 18px 10px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 32, height: 32, borderRadius: 10, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16 }}>
@@ -99,54 +99,67 @@ export default function AppShell() {
                 <div className="champ-heading" style={{ fontSize: 20, fontWeight: 800, color: C.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
                   CHAMP
                 </div>
-                <div style={{ fontSize: 10.5, color: C.soft, marginTop: 1 }}>
-                  Campus Health Ecosystem
+                <div style={{ fontSize: 9.5, color: C.soft, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>
+                  {activePersona === 'doctor' ? '🩺 Doctor Consultation Desk' : activePersona === 'pharmacist' ? '💊 Pharmacy Dispensary' : 'Campus Health Portal'}
                 </div>
               </div>
             </div>
 
+            {/* Header action buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {/* Profile / Health ID Button */}
+              {/* Health Pass / Student Profile Button */}
+              {activePersona === 'student' && (
+                <button
+                  onClick={() => setProfileOpen(true)}
+                  title="My Medical Profile & Health ID"
+                  style={{
+                    padding: '5px 9px',
+                    borderRadius: 10,
+                    background: C.primarySoft,
+                    border: `1px solid ${C.primary}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: C.primary,
+                  }}
+                >
+                  <CreditCard size={13} />
+                  <span>ID</span>
+                </button>
+              )}
+
+              {/* Gemini AI Assistant Button */}
               <button
-                onClick={() => setProfileOpen(true)}
-                title="Student Medical Profile & Health Card"
+                onClick={() => handleOpenAI()}
+                title="Gemini AI Health Assistant"
                 style={{
-                  height: 34,
-                  padding: '0 8px',
+                  padding: '5px 9px',
                   borderRadius: 10,
-                  background: C.primarySoft,
+                  background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 4,
-                  border: `1px solid ${C.primary}`,
-                  color: C.primary,
+                  fontSize: 11,
                   fontWeight: 700,
-                  fontSize: 11.5,
+                  color: '#fff',
                 }}
               >
-                <CreditCard size={14} /> ID
-              </button>
-
-              {/* AI Trigger Icon */}
-              <button
-                onClick={() => handleOpenAI()}
-                title="Ask Gemini Health AI"
-                style={{ width: 34, height: 34, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
-              >
-                <Sparkles size={16} color={C.accent} />
+                <Sparkles size={13} color="#FFE699" />
+                <span>AI</span>
               </button>
 
               {/* Notification Bell */}
               <button
-                onClick={() => { setNotifOpen(true); setLiveUnread(0); }}
-                style={{ position: 'relative', width: 34, height: 34, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
+                onClick={() => setNotifOpen(true)}
+                title="Notifications"
+                style={{ position: 'relative', width: 32, height: 32, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
               >
-                <Bell size={16} color={C.ink} />
+                <Bell size={15} color={hasAlert ? C.urgent : C.ink} />
                 {hasAlert && (
-                  <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: C.urgent }}>
-                    <span style={{ position: 'absolute', top: -10, right: -4, background: C.urgent, color: '#fff', fontSize: 8, fontWeight: 700, padding: '1px 3px', borderRadius: 999 }}>
-                      {liveUnread > 9 ? '9+' : liveUnread}
-                    </span>
+                  <div style={{ position: 'absolute', top: -3, right: -3, width: 15, height: 15, borderRadius: '50%', background: C.urgent, color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {liveUnread > 9 ? '9+' : liveUnread}
                   </div>
                 )}
               </button>
@@ -155,22 +168,22 @@ export default function AppShell() {
               <button
                 onClick={logout}
                 title="Log out"
-                style={{ width: 34, height: 34, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
+                style={{ width: 32, height: 32, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
               >
-                <LogOut size={15} color={C.soft} />
+                <LogOut size={14} color={C.soft} />
               </button>
             </div>
           </div>
 
           {/* Persona Switcher Bar for Hackathon Demo */}
-          <div style={{ display: 'flex', background: C.bg, borderRadius: 12, padding: 3, gap: 2 }}>
+          <div style={{ display: 'flex', background: C.bg, borderRadius: 12, padding: 2.5, gap: 2 }}>
             <button
               onClick={() => { setActivePersona('student'); navigate('/'); }}
               style={{
                 flex: 1,
-                padding: '6px 0',
+                padding: '5px 0',
                 borderRadius: 9,
-                fontSize: 11.5,
+                fontSize: 11,
                 fontWeight: 700,
                 background: activePersona === 'student' ? '#fff' : 'transparent',
                 color: activePersona === 'student' ? C.primary : C.soft,
@@ -183,9 +196,9 @@ export default function AppShell() {
               onClick={() => setActivePersona('doctor')}
               style={{
                 flex: 1,
-                padding: '6px 0',
+                padding: '5px 0',
                 borderRadius: 9,
-                fontSize: 11.5,
+                fontSize: 11,
                 fontWeight: 700,
                 background: activePersona === 'doctor' ? '#fff' : 'transparent',
                 color: activePersona === 'doctor' ? C.primary : C.soft,
@@ -198,9 +211,9 @@ export default function AppShell() {
               onClick={() => setActivePersona('pharmacist')}
               style={{
                 flex: 1,
-                padding: '6px 0',
+                padding: '5px 0',
                 borderRadius: 9,
-                fontSize: 11.5,
+                fontSize: 11,
                 fontWeight: 700,
                 background: activePersona === 'pharmacist' ? '#fff' : 'transparent',
                 color: activePersona === 'pharmacist' ? C.primary : C.soft,
@@ -212,12 +225,12 @@ export default function AppShell() {
           </div>
         </div>
 
-        {/* ─── Page content ─── */}
-        <div className="content-scroll" style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 100px' }}>
+        {/* ─── Scrollable Page content ─── */}
+        <div className="content-scroll" style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 80px' }}>
           {activePersona === 'doctor' ? (
             <DoctorPortal />
           ) : activePersona === 'pharmacist' ? (
-            <PharmacyPortal />
+            <PharmacyPortal persona="pharmacist" />
           ) : location.pathname === '/' ? (
             <HomePage onEmergency={() => setEmergencyOpen(true)} onOpenAI={handleOpenAI} />
           ) : (
@@ -231,32 +244,61 @@ export default function AppShell() {
             onClick={() => setEmergencyOpen(true)}
             className="emergency-fab"
             title="Emergency Help"
-            style={{ position: 'absolute', right: 18, bottom: 76, width: 52, height: 52, borderRadius: '50%', background: C.urgent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px -6px rgba(214,72,60,0.6)', zIndex: 10 }}
+            style={{ position: 'absolute', right: 16, bottom: 68, width: 48, height: 48, borderRadius: '50%', background: C.urgent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px -6px rgba(214,72,60,0.6)', zIndex: 10 }}
           >
-            <ShieldAlert size={22} color="#fff" />
+            <ShieldAlert size={20} color="#fff" />
           </button>
         )}
 
-        {/* ─── Bottom Navigation ─── */}
+        {/* ─── Bottom Navigation (Student View Only) ─── */}
         {activePersona === 'student' && (
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: C.surface, borderTop: `1px solid ${C.border}`, display: 'flex', padding: '8px 4px', zIndex: 5 }}>
+          <nav
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: C.surface,
+              borderTop: `1px solid ${C.border}`,
+              padding: '6px 8px 8px',
+              display: 'flex',
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              zIndex: 20,
+            }}
+          >
             {STUDENT_NAV.map(({ path, label, Icon }) => {
-              const active = location.pathname === path;
+              const isActive = location.pathname === path;
               return (
-                <button key={path} onClick={() => navigate(path)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '4px 0' }}>
-                  <Icon size={18} color={active ? C.primary : C.soft} />
-                  <span style={{ fontSize: 10, fontWeight: 600, color: active ? C.primary : C.soft }}>{label}</span>
+                <button
+                  key={path}
+                  onClick={() => navigate(path)}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 3,
+                    padding: '4px 10px',
+                    borderRadius: 12,
+                    background: isActive ? C.primarySoft : 'transparent',
+                    color: isActive ? C.primary : C.soft,
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Icon size={18} strokeWidth={isActive ? 2.5 : 1.8} />
+                  <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500 }}>{label}</span>
                 </button>
               );
             })}
-          </div>
+          </nav>
         )}
-      </div>
 
-      {emergencyOpen && <EmergencyModal onClose={() => setEmergencyOpen(false)} />}
-      {notifOpen     && <NotificationsPanel onClose={() => setNotifOpen(false)} />}
-      {aiModalOpen   && <AIAssistantModal initialQuery={aiInitialQuery} onClose={() => setAiModalOpen(false)} />}
-      {profileOpen   && <ProfileModal onClose={() => setProfileOpen(false)} />}
+        {/* Overlays and Modals */}
+        {emergencyOpen && <EmergencyModal onClose={() => setEmergencyOpen(false)} />}
+        {notifOpen     && <NotificationsPanel onClose={() => setNotifOpen(false)} />}
+        {profileOpen   && <ProfileModal onClose={() => setProfileOpen(false)} />}
+        {aiModalOpen   && <AIAssistantModal initialQuery={aiInitialQuery} onClose={() => setAiModalOpen(false)} />}
+      </div>
     </div>
   );
 }
