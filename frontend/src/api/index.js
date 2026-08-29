@@ -47,6 +47,10 @@ export const getMyDocuments            = ()           => api.get('/documents/stu
 export const getStudentDocuments       = (studentId)  => api.get(`/documents/student/${studentId}`);
 export const deleteDocument            = (id)         => api.delete(`/documents/${id}`);
 
+// ─── Support Helpdesk ─────────────────────────────────────────────
+export const createSupportTicket       = (data)       => api.post('/support/tickets', data);
+export const getMySupportTickets       = ()           => api.get('/support/tickets');
+
 // ─── Pharmacy Inventory ───────────────────────────────────────────
 export const getPharmacyInventory      = ()           => api.get('/pharmacy/inventory');
 export const updatePharmacyInventory   = (id, data)   => api.patch(`/pharmacy/inventory/${id}`, data);

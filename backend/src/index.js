@@ -18,6 +18,7 @@ import doctorScheduleRoutes from './routes/doctorSchedule.js';
 import aiRoutes from './routes/ai.js';
 import pharmacyRoutes from './routes/pharmacy.js';
 import documentRoutes from './routes/documents.js';
+import supportRoutes from './routes/support.js';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -25,9 +26,7 @@ const httpServer = http.createServer(app);
 // Dynamic CORS to support any Vercel domain, localhost, and custom domains with credentials
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow server-to-server or requests without origin
     if (!origin) return callback(null, true);
-    // Reflect request origin so credentials: true is accepted by all browsers
     callback(null, true);
   },
   credentials: true,
@@ -60,6 +59,7 @@ app.use('/api/doctor', doctorScheduleRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/support', supportRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));
