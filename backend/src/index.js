@@ -13,6 +13,10 @@ import doctorRoutes from './routes/doctors.js';
 import appointmentRoutes from './routes/appointments.js';
 import notificationRoutes from './routes/notifications.js';
 import emergencyRoutes from './routes/emergency.js';
+import prescriptionRoutes from './routes/prescriptions.js';
+import doctorScheduleRoutes from './routes/doctorSchedule.js';
+import aiRoutes from './routes/ai.js';
+import pharmacyRoutes from './routes/pharmacy.js';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -32,7 +36,7 @@ const corsOptions = {
 export const io = new Server(httpServer, {
   cors: {
     origin: (origin, callback) => callback(null, true),
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PATCH'],
     credentials: true,
   },
 });
@@ -49,6 +53,10 @@ app.use('/api/doctors', doctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/emergency', emergencyRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/api/doctor', doctorScheduleRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/pharmacy', pharmacyRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));

@@ -10,9 +10,10 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import AppShell from './pages/AppShell.jsx';
 import HomePage from './pages/HomePage.jsx';
 import AppointmentsPage from './pages/AppointmentsPage.jsx';
+import PharmacyPortal from './pages/PharmacyPortal.jsx';
 import StubPage from './pages/StubPage.jsx';
 import SupportPage from './pages/SupportPage.jsx';
-import { Pill, HeartPulse } from 'lucide-react';
+import { HeartPulse } from 'lucide-react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,22 +73,13 @@ export default function App() {
           >
             <Route index element={<HomePage />} />
             <Route path="appointments" element={<AppointmentsPage />} />
-            <Route
-              path="pharmacy"
-              element={
-                <StubPage
-                  icon={Pill}
-                  title="Pharmacy & Records"
-                  desc="Prescription requests, delivery tracking, and your medical history will live here."
-                />
-              }
-            />
+            <Route path="pharmacy"     element={<PharmacyPortal />} />
             <Route
               path="wellness"
               element={
                 <StubPage
                   icon={HeartPulse}
-                  title="Wellness"
+                  title="Wellness & Counselling"
                   desc="Book confidential sessions with campus counsellors and psychologists."
                 />
               }

@@ -1,9 +1,7 @@
 -- ============================================================
--- CHAMP Database Schema
--- Run this SQL in Supabase SQL Editor (or any PostgreSQL)
+-- CHAMP Database Schema — Enhanced with Prescriptions, Pharmacy & Outbreaks
 -- ============================================================
 
--- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ─── Users ────────────────────────────────────────────────────────
@@ -13,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   email       TEXT UNIQUE NOT NULL,
   password    TEXT NOT NULL,
   role        TEXT NOT NULL DEFAULT 'student'
-                CHECK (role IN ('student', 'doctor', 'admin')),
+                CHECK (role IN ('student', 'doctor', 'pharmacist', 'admin')),
   phone       TEXT,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
@@ -29,7 +27,7 @@ CREATE TABLE IF NOT EXISTS doctors (
   is_active   BOOLEAN DEFAULT TRUE
 );
 
--- ─── Slots (Available time blocks per doctor per day) ─────────────
+-- ─── Slots ────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS slots (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   doctor_id   UUID REFERENCES doctors(id) ON DELETE CASCADE,
@@ -46,10 +44,59 @@ CREATE TABLE IF NOT EXISTS appointments (
   doctor_id   UUID REFERENCES doctors(id),
   slot_id     UUID REFERENCES slots(id),
   status      TEXT NOT NULL DEFAULT 'confirmed'
-                CHECK (status IN ('confirmed', 'cancelled', 'completed')),
+                CHECK (status IN ('confirmed', 'in_consultation', 'completed', 'cancelled')),
   queue_pos   INTEGER,
   notes       TEXT,
   booked_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─── Prescriptions ────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS prescriptions (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  appointment_id  UUID REFERENCES appointments(id) ON DELETE SET NULL,
+  doctor_id       UUID REFERENCES doctors(id) ON DELETE CASCADE,
+  student_id      UUID REFERENCES users(id) ON DELETE CASCADE,
+  diagnosis       TEXT NOT NULL,
+  notes           TEXT,
+  status          TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending', 'preparing', 'ready_for_pickup', 'dispensed')),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  dispensed_at    TIMESTAMPTZ
+);
+
+-- ─── Prescription Items ───────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS prescription_items (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prescription_id  UUID REFERENCES prescriptions(id) ON DELETE CASCADE,
+  medicine_name    TEXT NOT NULL,
+  dosage           TEXT NOT NULL, -- e.g. "500mg"
+  frequency        TEXT NOT NULL, -- e.g. "1-0-1 (Morning & Night)"
+  duration_days    INTEGER NOT NULL DEFAULT 3,
+  instructions     TEXT -- e.g. "After food with water"
+);
+
+-- ─── Pharmacy Inventory ───────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS pharmacy_inventory (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name            TEXT NOT NULL,
+  category        TEXT NOT NULL,
+  stock_quantity  INTEGER NOT NULL DEFAULT 50,
+  unit            TEXT NOT NULL DEFAULT 'tablets',
+  is_available    BOOLEAN DEFAULT TRUE
+);
+
+-- ─── Outbreak Alerts & Health Advisories ───────────────────────────
+CREATE TABLE IF NOT EXISTS outbreak_alerts (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  disease_name     TEXT NOT NULL,
+  severity         TEXT NOT NULL DEFAULT 'warning'
+                     CHECK (severity IN ('info', 'warning', 'critical')),
+  active_cases     INTEGER NOT NULL DEFAULT 12,
+  hotspots         TEXT DEFAULT 'Hostel Blocks B & C, Mess Hall 2',
+  advisory         TEXT NOT NULL,
+  prevention_steps TEXT[] NOT NULL DEFAULT '{}',
+  is_active        BOOLEAN DEFAULT TRUE,
+  updated_at       TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ─── Notifications ────────────────────────────────────────────────
@@ -59,7 +106,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   title       TEXT NOT NULL,
   body        TEXT NOT NULL,
   type        TEXT DEFAULT 'info'
-                CHECK (type IN ('info', 'reminder', 'cancelled', 'urgent')),
+                CHECK (type IN ('info', 'reminder', 'cancelled', 'urgent', 'prescription')),
   is_read     BOOLEAN DEFAULT FALSE,
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
@@ -72,25 +119,46 @@ CREATE TABLE IF NOT EXISTS emergency_contacts (
   priority    INTEGER DEFAULT 0
 );
 
--- ─── Seed: Emergency Contacts ─────────────────────────────────────
+-- ============================================================
+-- SEED DATA
+-- ============================================================
+
+-- Emergency Contacts
 INSERT INTO emergency_contacts (label, number, priority) VALUES
   ('Campus Health Centre', '+91 98765 43210', 1),
   ('Ambulance', '108', 0),
   ('Campus Security', '+91 98765 00000', 2)
 ON CONFLICT DO NOTHING;
 
--- ─── Seed: Doctors ────────────────────────────────────────────────
--- First create doctor user accounts (passwords: "doctor123" - change in prod!)
-INSERT INTO users (id, name, email, password, role) VALUES
-  ('11111111-0000-0000-0000-000000000001', 'Dr. Aditi Rao',    'aditi@campus.edu',   '$2a$10$placeholder', 'doctor'),
-  ('11111111-0000-0000-0000-000000000002', 'Dr. Kabir Mehta',  'kabir@campus.edu',   '$2a$10$placeholder', 'doctor'),
-  ('11111111-0000-0000-0000-000000000003', 'Dr. Sanjana Iyer', 'sanjana@campus.edu', '$2a$10$placeholder', 'doctor'),
-  ('11111111-0000-0000-0000-000000000004', 'Dr. Rohan Verma',  'rohan@campus.edu',   '$2a$10$placeholder', 'doctor')
+-- Seed Pharmacy Inventory
+INSERT INTO pharmacy_inventory (name, category, stock_quantity, unit, is_available) VALUES
+  ('Paracetamol 500mg', 'Analgesics / Fever', 250, 'tablets', TRUE),
+  ('Azithromycin 500mg', 'Antibiotics', 60, 'tablets', TRUE),
+  ('Cetirizine 10mg', 'Antihistamines / Allergy', 180, 'tablets', TRUE),
+  ('Ciprofloxacin Eye Drops 0.3%', 'Ophthalmic', 45, 'bottles', TRUE),
+  ('ORS (Oral Rehydration Salts)', 'Electrolytes', 120, 'packets', TRUE),
+  ('Pantoprazole 40mg', 'Antacids / Gastric', 150, 'tablets', TRUE),
+  ('Amoxicillin + Clavulanic 625mg', 'Antibiotics', 40, 'tablets', TRUE),
+  ('Ibuprofen 400mg', 'Anti-inflammatory', 100, 'tablets', TRUE),
+  ('Volini Pain Relief Gel', 'Topical / Muscle Pain', 30, 'tubes', TRUE),
+  ('Vitamin C + Zinc Chewable', 'Supplements / Immunity', 300, 'tablets', TRUE)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO doctors (user_id, name, specialty) VALUES
-  ('11111111-0000-0000-0000-000000000001', 'Dr. Aditi Rao',    'General Physician'),
-  ('11111111-0000-0000-0000-000000000002', 'Dr. Kabir Mehta',  'Gynaecology'),
-  ('11111111-0000-0000-0000-000000000003', 'Dr. Sanjana Iyer', 'Dermatology'),
-  ('11111111-0000-0000-0000-000000000004', 'Dr. Rohan Verma',  'Orthopaedics')
+-- Seed Active Campus Outbreak Alert
+INSERT INTO outbreak_alerts (disease_name, severity, active_cases, hotspots, advisory, prevention_steps, is_active) VALUES
+  (
+    'Viral Conjunctivitis (Pink Eye)',
+    'warning',
+    34,
+    'Hostel Blocks A & C, Library Central',
+    'Sudden rise in red, itchy eye cases with watery discharge across hostel blocks. Highly contagious through direct contact and shared surfaces.',
+    ARRAY[
+      'Wash hands frequently with soap and warm water for at least 20 seconds.',
+      'Do not touch or rub your eyes with unwashed hands.',
+      'Avoid sharing towels, bedsheets, eye drops, or eyeglasses.',
+      'Wear protective eyeglasses and isolate in room if experiencing symptoms.',
+      'Book a slot with Dr. Aditi Rao (General Physician) or visit the Health Centre for prescribed antibiotic eye drops.'
+    ],
+    TRUE
+  )
 ON CONFLICT DO NOTHING;
