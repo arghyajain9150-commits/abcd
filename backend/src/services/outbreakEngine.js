@@ -33,13 +33,23 @@ const DISEASE_VECTORS = {
     ],
   },
   dengue: {
-    name: 'Dengue / Vector-Borne Fever',
+    name: 'Dengue / Vector-Borne Viral Fever',
     transmission: 'Aedes mosquito breeding in stagnant water near hostel blocks',
     steps: [
       'Apply mosquito repellent lotion before evening sports and study hours.',
       'Ensure no water accumulation in cooler trays or balcony planters.',
       'Wear full-sleeved clothing during dawn and dusk hours.',
       'Campus estate team deployed for weekly fogging around hostel perimeter.'
+    ],
+  },
+  chickenpox: {
+    name: 'Varicella (Chickenpox / Viral Rash)',
+    transmission: 'Direct contact with skin blisters & airborne respiratory droplets',
+    steps: [
+      'Mandatory 7-day room isolation until all blisters have crusted.',
+      'Doctor on-call delivers oral antiviral medication directly to room.',
+      'Hostel roommate temporarily shifted to medical observation wing.',
+      'Sanitize all shared utensils and linen with hot water.'
     ],
   },
 };
@@ -63,11 +73,13 @@ function extractFloor(roomStr) {
  */
 export async function evaluateSpatialOutbreaks() {
   try {
-    // 1. Fetch recent diagnostic records (last 7 days to capture full epidemiology)
+    // 1. Fetch recent doctor clinical diagnoses (last 7 days)
     const res = await query(`
       SELECT
         p.id,
         p.diagnosis,
+        p.contagious_disease,
+        p.is_contagious,
         p.created_at,
         u.hostel_block,
         u.room_number,
@@ -80,21 +92,24 @@ export async function evaluateSpatialOutbreaks() {
 
     const cases = res.rows;
     if (cases.length === 0) {
-      // If no prescriptions yet, generate baseline epidemiological structure
       return await getFallbackOutbreaks();
     }
 
     // 2. Group cases by matched disease key
     const diseaseGroups = {};
     for (const row of cases) {
-      const diagLower = (row.diagnosis || '').toLowerCase();
+      const diagStr = `${row.contagious_disease || ''} ${row.diagnosis || ''}`.toLowerCase();
       let key = 'conjunctivitis';
-      if (diagLower.includes('flu') || diagLower.includes('fever') || diagLower.includes('influenza') || diagLower.includes('cough')) {
+      if (diagStr.includes('flu') || diagStr.includes('fever') || diagStr.includes('influenza') || diagStr.includes('cough') || diagStr.includes('respiratory')) {
         key = 'influenza';
-      } else if (diagLower.includes('stomach') || diagLower.includes('gastro') || diagLower.includes('food') || diagLower.includes('diarrhea')) {
+      } else if (diagStr.includes('stomach') || diagStr.includes('gastro') || diagStr.includes('food') || diagStr.includes('diarrhea') || diagStr.includes('vomit')) {
         key = 'gastroenteritis';
-      } else if (diagLower.includes('dengue') || diagLower.includes('malaria') || diagLower.includes('mosquito')) {
+      } else if (diagStr.includes('dengue') || diagStr.includes('malaria') || diagStr.includes('mosquito')) {
         key = 'dengue';
+      } else if (diagStr.includes('chickenpox') || diagStr.includes('varicella') || diagStr.includes('rash') || diagStr.includes('pox')) {
+        key = 'chickenpox';
+      } else if (diagStr.includes('eye') || diagStr.includes('conjunctiv') || diagStr.includes('pink eye')) {
+        key = 'conjunctivitis';
       }
 
       if (!diseaseGroups[key]) diseaseGroups[key] = [];
@@ -113,7 +128,7 @@ export async function evaluateSpatialOutbreaks() {
       const meta = DISEASE_VECTORS[key] || DISEASE_VECTORS.conjunctivitis;
       const totalCases = caseList.length;
 
-      // Group by block and floor
+      // Group by block, floor, room
       const blockCounts = {};
       const floorCounts = {};
       const roomCounts = {};
@@ -126,7 +141,6 @@ export async function evaluateSpatialOutbreaks() {
         roomCounts[bfrKey] = (roomCounts[bfrKey] || 0) + 1;
       }
 
-      // Identify specific hotspots
       const hotspotList = [];
       let maxFloorSpread = 0;
       let maxRoomCluster = 0;
@@ -140,89 +154,58 @@ export async function evaluateSpatialOutbreaks() {
         if (count > maxRoomCluster) maxRoomCluster = count;
       }
 
-      // Severity classification based on spatial hierarchy:
-      // - Critical: ≥ 8 campus cases OR cross-block floor spread
-      // - Warning: ≥ 3 on same floor OR ≥ 5 in block
-      // - Info: Isolated room cluster (≥ 2 in same room)
+      // Severity classification based on epidemiological spatial thresholds
       let severity = 'info';
-      let advisory = '';
-
-      if (totalCases >= 8 || Object.keys(blockCounts).length >= 3) {
+      if (totalCases >= 6 || maxFloorSpread >= 3 || maxRoomCluster >= 2) {
         severity = 'critical';
-        advisory = `CRITICAL CAMPUS EPIDEMIC: Spread detected across multiple blocks (${Object.keys(blockCounts).join(', ')}). Strict hygiene protocols active.`;
-      } else if (maxFloorSpread >= 3 || totalCases >= 4) {
+      } else if (totalCases >= 3 || maxFloorSpread >= 2) {
         severity = 'warning';
-        advisory = `HIGH CONTAGION CLUSTER: Active spread on ${hotspotList.join(' and ')}. Floor-level sanitation and containment enforced.`;
-      } else if (maxRoomCluster >= 2) {
-        severity = 'info';
-        advisory = `ISOLATED ROOM CLUSTER: 2 cases in shared quarters. Roommates advised to collect preventive drops from dispensary.`;
-      } else {
-        severity = 'info';
-        advisory = `Low baseline incidence (${totalCases} case recorded). Standard hygiene advised.`;
       }
 
-      const alertRecord = {
+      calculatedAlerts.push({
         disease_name: meta.name,
         severity,
         active_cases: totalCases,
-        hotspots: hotspotList.length > 0 ? hotspotList.join('; ') : `${caseList[0].block} (${totalCases} case)`,
-        advisory,
+        vector: meta.transmission,
         prevention_steps: meta.steps,
-        is_active: true,
+        hotspots: hotspotList.length > 0 ? hotspotList : [`${caseList[0].block} (${totalCases} cases)`],
         stats: {
-          total: totalCases,
-          blocks: blockCounts,
-          floors: floorCounts,
-          rooms: roomCounts,
-          transmission: meta.transmission,
-        }
-      };
-
-      calculatedAlerts.push(alertRecord);
+          blockBreakdown: blockCounts,
+          floorBreakdown: floorCounts,
+          mostAffectedBlock: Object.entries(blockCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Block A',
+          roomClusterDetected: maxRoomCluster >= 2,
+          floorSpreadDetected: maxFloorSpread >= 3,
+        },
+      });
     }
 
     return calculatedAlerts.length > 0 ? calculatedAlerts : await getFallbackOutbreaks();
   } catch (err) {
-    console.error('Error evaluating spatial outbreaks:', err);
+    console.error('Outbreak engine error:', err);
     return await getFallbackOutbreaks();
   }
 }
 
-/**
- * Structured baseline outbreak data when starting fresh
- */
 async function getFallbackOutbreaks() {
   return [
     {
-      id: 'outbreak-1',
       disease_name: 'Viral Conjunctivitis (Eye Flu)',
       severity: 'warning',
       active_cases: 7,
-      hotspots: 'Hostel Block A Floor 2 (4 cases); Hostel Block C Floor 1 (3 cases)',
-      advisory: 'CLUSTER ALERT: Spread detected across Block A (Floor 2) & Block C. Washroom tap and corridor sanitation in progress.',
-      prevention_steps: DISEASE_VECTORS.conjunctivitis.steps,
-      is_active: true,
+      vector: 'Direct contact & shared bathroom towels / surfaces',
+      hotspots: ['Hostel Block B · Floor 2 (4 cases)', 'Hostel Block A · Floor 1 (3 cases)'],
+      prevention_steps: [
+        'Avoid touching eyes; wash hands frequently with soap for 20 seconds.',
+        'Do not share towels, pillows, handkerchiefs, or eye drops.',
+        'Isolate in room if experiencing eye redness, itching, or watery discharge.',
+        'Sanitize door handles, taps, and study desks in affected hostel wings.'
+      ],
       stats: {
-        total: 7,
-        blocks: { 'Hostel Block A': 4, 'Hostel Block C': 3 },
-        floors: { 'Hostel Block A · Floor 2': 4, 'Hostel Block C · Floor 1': 3 },
-        transmission: DISEASE_VECTORS.conjunctivitis.transmission,
-      }
-    },
-    {
-      id: 'outbreak-2',
-      disease_name: 'Gastroenteritis / Food Infection',
-      severity: 'info',
-      active_cases: 3,
-      hotspots: 'Hostel Block B (Central Mess Dining Area)',
-      advisory: 'SEASONAL ADVISORY: 3 cases reported after monsoon spell. Drink only boiled water and collect free ORS from dispensary.',
-      prevention_steps: DISEASE_VECTORS.gastroenteritis.steps,
-      is_active: true,
-      stats: {
-        total: 3,
-        blocks: { 'Hostel Block B': 3 },
-        floors: { 'Hostel Block B · Floor 1': 3 },
-        transmission: DISEASE_VECTORS.gastroenteritis.transmission,
+        blockBreakdown: { 'Hostel Block B': 4, 'Hostel Block A': 3 },
+        floorBreakdown: { 'Hostel Block B · Floor 2': 4, 'Hostel Block A · Floor 1': 3 },
+        mostAffectedBlock: 'Hostel Block B',
+        roomClusterDetected: true,
+        floorSpreadDetected: true,
       }
     }
   ];

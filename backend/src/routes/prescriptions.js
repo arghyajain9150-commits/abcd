@@ -22,10 +22,12 @@ const CreatePrescriptionSchema = z.object({
   doctor_id: z.string().optional().nullable(),
   diagnosis: z.string().min(2),
   notes: z.string().optional(),
+  is_contagious: z.boolean().optional().default(false),
+  contagious_disease: z.string().optional().nullable(),
   items: z.array(PrescriptionItemSchema).min(1),
 });
 
-// POST /api/prescriptions - Doctor creates digital prescription
+// POST /api/prescriptions - Doctor creates digital prescription with Contagious Disease Tag
 router.post('/', authMiddleware, async (req, res, next) => {
   try {
     const data = CreatePrescriptionSchema.parse(req.body);
@@ -58,10 +60,10 @@ router.post('/', authMiddleware, async (req, res, next) => {
     // 3. Generate 4-digit Pickup OTP
     const pickupOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // 4. Insert Prescription
+    // 4. Insert Prescription with Contagious Disease Surveillance Tag
     const rxRes = await query(
-      `INSERT INTO prescriptions (appointment_id, doctor_id, student_id, diagnosis, notes, status, pickup_otp, expires_at)
-       VALUES ($1, $2, $3, $4, $5, 'pending', $6, NOW() + INTERVAL '7 days')
+      `INSERT INTO prescriptions (appointment_id, doctor_id, student_id, diagnosis, notes, status, pickup_otp, expires_at, is_contagious, contagious_disease)
+       VALUES ($1, $2, $3, $4, $5, 'pending', $6, NOW() + INTERVAL '7 days', $7, $8)
        RETURNING *`,
       [
         data.appointment_id && data.appointment_id.length > 10 ? data.appointment_id : null,
@@ -69,7 +71,9 @@ router.post('/', authMiddleware, async (req, res, next) => {
         studentId,
         data.diagnosis,
         data.notes || '',
-        pickupOtp
+        pickupOtp,
+        data.is_contagious || (data.contagious_disease && data.contagious_disease !== 'None') ? true : false,
+        data.contagious_disease || null,
       ]
     );
     const prescription = rxRes.rows[0];
@@ -86,7 +90,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
       insertedItems.push(itemRes.rows[0]);
     }
 
-    // 6. Update appointment status if appointment_id provided
+    // 6. Update appointment status to 'completed' if appointment_id provided
     if (data.appointment_id && data.appointment_id.length > 10) {
       await query(
         "UPDATE appointments SET status = 'completed' WHERE id = $1",
@@ -112,7 +116,15 @@ router.post('/', authMiddleware, async (req, res, next) => {
       console.warn('Could not write notification:', e.message);
     }
 
-    // 8. Emit Real-Time Socket Event to Pharmacy
+    // 8. If marked as Contagious Disease, broadcast outbreak alert update to entire campus!
+    if (prescription.is_contagious) {
+      io.emit('outbreak_alert_updated', {
+        disease: prescription.contagious_disease || prescription.diagnosis,
+        timestamp: new Date(),
+      });
+    }
+
+    // 9. Emit Real-Time Socket Event to Pharmacy
     io.emit('new_prescription', {
       ...prescription,
       items: insertedItems,
@@ -233,8 +245,7 @@ router.patch('/:id/status', authMiddleware, async (req, res, next) => {
       try {
         const items = await query('SELECT medicine_name, duration_days FROM prescription_items WHERE prescription_id = $1', [req.params.id]);
         for (const item of items.rows) {
-          // Decrement stock quantity atomically
-          const baseName = item.medicine_name.split(' ')[0]; // e.g. 'Paracetamol'
+          const baseName = item.medicine_name.split(' ')[0];
           await query(
             `UPDATE pharmacy_inventory 
              SET stock_quantity = GREATEST(0, stock_quantity - 1),

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Stethoscope, Calendar, Clock, User, CheckCircle2, Plus, Phone, FileText, Pill, History, AlertTriangle, ChevronDown, Check, Building } from 'lucide-react';
+import { Stethoscope, Calendar, Clock, User, CheckCircle2, Plus, Phone, FileText, Pill, History, AlertTriangle, ChevronDown, Check, Building, Radio } from 'lucide-react';
 import { getDoctorQueue, createDoctorSlots, updateAppointmentStatus, getDoctors } from '../api/index.js';
 import PrescriptionWriterModal from '../components/PrescriptionWriterModal.jsx';
 import StudentHistoryModal from '../components/StudentHistoryModal.jsx';
@@ -31,7 +31,7 @@ export default function DoctorPortal() {
   const [rxWriterOpen, setRxWriterOpen] = useState(false);
 
   // 1. Fetch all campus doctors for the Doctor Desk Switcher
-  const { data: doctors = [], isLoading: loadingDoctors } = useQuery({
+  const { data: doctors = [] } = useQuery({
     queryKey: ['doctors'],
     queryFn: () => getDoctors().then((r) => r.data),
   });
@@ -51,7 +51,7 @@ export default function DoctorPortal() {
     queryKey: ['doctor-queue', slotDate, selectedDoctorId],
     queryFn: () => getDoctorQueue(slotDate, selectedDoctorId).then((r) => r.data),
     enabled: !!selectedDoctorId,
-    refetchInterval: 8_000,
+    refetchInterval: 6_000,
   });
 
   const { mutate: changeStatus } = useMutation({
@@ -71,6 +71,20 @@ export default function DoctorPortal() {
       setTab('queue');
     },
   });
+
+  const handleOpenRxForAppt = (appt) => {
+    setSelectedAppt({
+      id: appt.id,
+      student_id: appt.student_id,
+      student_name: appt.student_name,
+      student_email: appt.student_email,
+      doctor_id: selectedDoctorId,
+      allergies: appt.allergies,
+      hostel_block: appt.hostel_block,
+      room_number: appt.room_number,
+    });
+    setRxWriterOpen(true);
+  };
 
   const inConsultation = queue.find((a) => a.status === 'in_consultation');
   const waitingList = queue.filter((a) => a.status === 'confirmed');
@@ -180,6 +194,8 @@ export default function DoctorPortal() {
               doctor_id: selectedDoctorId,
               student_name: 'Walk-in Student Patient',
               student_email: '',
+              hostel_block: 'Hostel Block A',
+              room_number: '204',
             });
             setRxWriterOpen(true);
           }}
@@ -234,7 +250,7 @@ export default function DoctorPortal() {
                   {inConsultation.student_name}
                 </div>
                 <div style={{ fontSize: 12, color: C.soft, marginTop: 1 }}>
-                  {inConsultation.student_email} · {inConsultation.hostel_block || 'Hostel B'} Rm {inConsultation.room_number || '204'}
+                  {inConsultation.student_email} · {inConsultation.hostel_block || 'Hostel Block B'} Rm {inConsultation.room_number || '204'}
                 </div>
               </div>
 
@@ -245,18 +261,15 @@ export default function DoctorPortal() {
               )}
 
               {/* Action Buttons */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 8, marginTop: 4 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 8, marginTop: 4 }}>
                 <button
-                  onClick={() => {
-                    setSelectedAppt(inConsultation);
-                    setRxWriterOpen(true);
-                  }}
+                  onClick={() => handleOpenRxForAppt(inConsultation)}
                   style={{
                     background: C.primary,
                     color: '#fff',
                     borderRadius: 12,
                     padding: '10px 0',
-                    fontSize: 12.5,
+                    fontSize: 13,
                     fontWeight: 700,
                     border: 'none',
                     cursor: 'pointer',
@@ -264,9 +277,10 @@ export default function DoctorPortal() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 6,
+                    boxShadow: '0 3px 10px rgba(47,122,104,0.3)',
                   }}
                 >
-                  <Pill size={15} /> Write Prescription
+                  <Pill size={16} /> Write Prescription
                 </button>
 
                 <button
@@ -366,11 +380,31 @@ export default function DoctorPortal() {
                     )}
 
                     {/* Patient Actions */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 4 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 0.8fr', gap: 6, marginTop: 4 }}>
+                      <button
+                        onClick={() => handleOpenRxForAppt(appt)}
+                        style={{
+                          background: C.primary,
+                          color: '#fff',
+                          padding: '8px 0',
+                          borderRadius: 10,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <Pill size={14} /> Prescribe
+                      </button>
+
                       <button
                         onClick={() => changeStatus({ id: appt.id, status: 'in_consultation' })}
                         style={{
-                          background: C.primary,
+                          background: '#17322C',
                           color: '#fff',
                           padding: '8px 0',
                           borderRadius: 10,
@@ -396,7 +430,7 @@ export default function DoctorPortal() {
                           cursor: 'pointer',
                         }}
                       >
-                        View History
+                        History
                       </button>
                     </div>
                   </div>
@@ -543,6 +577,9 @@ export default function DoctorPortal() {
               student_id: student.id,
               student_name: student.name,
               student_email: student.email,
+              allergies: student.allergies,
+              hostel_block: student.hostel_block,
+              room_number: student.room_number,
             });
             setRxWriterOpen(true);
           }}

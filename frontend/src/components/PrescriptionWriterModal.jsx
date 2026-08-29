@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Plus, Trash2, Pill, Send, CheckCircle2, AlertCircle, AlertTriangle, Search, Check } from 'lucide-react';
+import { X, Plus, Trash2, Pill, Send, CheckCircle2, AlertCircle, AlertTriangle, Search, Check, ShieldAlert, Radio } from 'lucide-react';
 import { createPrescription, getPharmacyInventory } from '../api/index.js';
 
 const C = {
@@ -17,12 +17,22 @@ const C = {
   accentSoft: '#FFF4E5',
 };
 
+const CONTAGIOUS_OPTIONS = [
+  { id: 'none', label: 'None (Non-Contagious Condition)', disease: null },
+  { id: 'conjunctivitis', label: '🦠 Viral Conjunctivitis (Eye Flu)', disease: 'Viral Conjunctivitis' },
+  { id: 'influenza', label: '🦠 Influenza / Seasonal Flu', disease: 'Influenza / Viral Flu' },
+  { id: 'gastro', label: '🦠 Acute Viral Gastroenteritis', disease: 'Gastroenteritis' },
+  { id: 'chickenpox', label: '🦠 Varicella / Chickenpox', disease: 'Varicella (Chickenpox)' },
+  { id: 'dengue', label: '🦠 Dengue / Vector-Borne Fever', disease: 'Dengue Viral Fever' },
+];
+
 export default function PrescriptionWriterModal({ appointment, onClose }) {
   const qc = useQueryClient();
   const [studentName, setStudentName] = useState(appointment?.student_name || 'Campus Student');
   const [studentEmail, setStudentEmail] = useState(appointment?.student_email || '');
   const [diagnosis, setDiagnosis] = useState('');
   const [notes, setNotes] = useState('');
+  const [contagiousTag, setContagiousTag] = useState('none');
   const [errorMsg, setErrorMsg] = useState('');
   const [items, setItems] = useState([
     { medicine_name: 'Paracetamol 500mg', dosage: '500mg', frequency: '1-0-1 (Morning & Night)', duration_days: 3, instructions: 'After food' },
@@ -42,6 +52,8 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
       qc.invalidateQueries(['doctor-queue']);
       qc.invalidateQueries(['student-prescriptions']);
       qc.invalidateQueries(['pharmacy-prescriptions']);
+      qc.invalidateQueries(['outbreaks']);
+      qc.invalidateQueries(['campus-radar']);
       setTimeout(() => {
         onClose();
       }, 1400);
@@ -87,6 +99,9 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
       return;
     }
     setErrorMsg('');
+
+    const matchedTag = CONTAGIOUS_OPTIONS.find((c) => c.id === contagiousTag);
+
     submitRx({
       appointment_id: appointment?.id || null,
       student_id: appointment?.student_id || null,
@@ -95,6 +110,8 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
       doctor_id: appointment?.doctor_id || null,
       diagnosis,
       notes,
+      is_contagious: contagiousTag !== 'none',
+      contagious_disease: matchedTag?.disease || (contagiousTag !== 'none' ? diagnosis : null),
       items: items.filter((it) => it.medicine_name.trim()),
     });
   };
@@ -138,9 +155,9 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
             </div>
             <div>
               <div className="champ-heading" style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>
-                Issue Digital Prescription
+                OPD Prescription & Outbreak Tag
               </div>
-              <div style={{ fontSize: 11, color: C.soft }}>Patient: {studentName} ({appointment?.hostel_block || 'Hostel B'} Rm {appointment?.room_number || '204'})</div>
+              <div style={{ fontSize: 11, color: C.soft }}>Patient: {studentName} ({appointment?.hostel_block || 'Hostel Block B'} Rm {appointment?.room_number || '204'})</div>
             </div>
           </div>
           <button
@@ -183,7 +200,7 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
             </label>
             <input
               type="text"
-              placeholder="e.g. Acute Viral Bronchitis, Allergic Rhinitis"
+              placeholder="e.g. Acute Viral Bronchitis, Follicular Conjunctivitis, Migraine"
               value={diagnosis}
               onChange={(e) => setDiagnosis(e.target.value)}
               style={{
@@ -196,6 +213,48 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
                 outline: 'none',
               }}
             />
+          </div>
+
+          {/* ─── AI Outbreak Radar Contagious Tagging ─── */}
+          <div style={{ background: '#FFF7E6', border: `1.5px solid #F5D590`, borderRadius: 14, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Radio size={16} color={C.accent} />
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: C.ink, textTransform: 'uppercase' }}>
+                AI Outbreak Surveillance Radar Tag
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: C.soft, lineHeight: 1.3 }}>
+              Tagging contagious infections automatically triggers the campus spatial clustering radar across this student's hostel floor.
+            </div>
+
+            <select
+              value={contagiousTag}
+              onChange={(e) => {
+                setContagiousTag(e.target.value);
+                const matched = CONTAGIOUS_OPTIONS.find((c) => c.id === e.target.value);
+                if (matched && matched.disease && !diagnosis) {
+                  setDiagnosis(matched.disease);
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                borderRadius: 10,
+                border: `1px solid ${C.border}`,
+                fontSize: 12.5,
+                fontWeight: 700,
+                color: contagiousTag !== 'none' ? C.urgent : C.ink,
+                background: '#fff',
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {CONTAGIOUS_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Quick-Select Common Formulary from Live Inventory */}
@@ -370,13 +429,13 @@ export default function PrescriptionWriterModal({ appointment, onClose }) {
           >
             {success ? (
               <>
-                <CheckCircle2 size={16} /> Dispatched to Pharmacy!
+                <CheckCircle2 size={16} /> Dispatched & Synced!
               </>
             ) : isPending ? (
               'Transmitting Rx…'
             ) : (
               <>
-                <Send size={15} /> Dispatch to Pharmacy
+                <Send size={15} /> Issue Rx & Sync Radar
               </>
             )}
           </button>
