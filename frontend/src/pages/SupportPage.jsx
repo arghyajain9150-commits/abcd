@@ -119,8 +119,9 @@ export default function SupportPage() {
           TAB 1: SUBMIT INQUIRY & FAQS
       ──────────────────────────────────────────────────────────────── */}
       {activeTab === 'new' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Clinic Timing & Location Card */}
+        <div className="support-desktop-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18, alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Clinic Timing & Location Card */}
           <div style={{ background: C.surface, borderRadius: 18, padding: 14, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <div style={{ width: 34, height: 34, borderRadius: 10, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -220,8 +221,9 @@ export default function SupportPage() {
               </form>
             )}
           </div>
+          </div>
 
-          {/* Searchable FAQs Accordion */}
+          {/* Right Column: Searchable FAQs Accordion */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontWeight: 800, fontSize: 14, color: C.ink, textTransform: 'uppercase', letterSpacing: '0.04em' }}>

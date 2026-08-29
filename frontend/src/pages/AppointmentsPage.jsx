@@ -365,7 +365,7 @@ function BookFlow({ onBooked }) {
       {loadingDoctors ? (
         <div style={{ textAlign: 'center', padding: 30, color: C.soft }}>Loading campus doctors…</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {filteredDoctors.map((d) => (
             <div
               key={d.id}

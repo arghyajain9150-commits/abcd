@@ -15,7 +15,7 @@ import PharmacyPortal from './PharmacyPortal.jsx';
 import HomePage from './HomePage.jsx';
 
 const C = {
-  bg: '#EDEDE6', frame: '#F5F7F3', surface: '#FFFFFF',
+  bg: '#EAECE6', frame: '#F5F7F3', surface: '#FFFFFF',
   ink: '#17322C', soft: '#5B7169', primary: '#2F7A68',
   primarySoft: '#E4EFEA', urgent: '#D6483C', border: '#E1E3DA',
   accent: '#E3A542',
@@ -80,7 +80,7 @@ export default function AppShell() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', height: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 8px', fontFamily: "'Inter', sans-serif", overflow: 'hidden' }}>
+    <div className="app-viewport-wrapper">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
@@ -94,59 +94,153 @@ export default function AppShell() {
         }
         .emergency-fab { animation: pulse-ring 2.4s infinite; }
         @media (prefers-reduced-motion: reduce) { .emergency-fab { animation: none; } }
-        .content-scroll::-webkit-scrollbar { width: 5px; }
+        
+        .app-viewport-wrapper {
+          min-height: 100vh;
+          background: ${C.bg};
+          display: flex;
+          align-items: center;
+          justifyContent: center;
+          padding: 16px 12px;
+          font-family: 'Inter', sans-serif;
+        }
+
+        .app-shell-container {
+          width: 100%;
+          max-width: 440px;
+          height: 94vh;
+          max-height: 860px;
+          background: ${C.frame};
+          border-radius: 28px;
+          box-shadow: 0 20px 60px -20px rgba(23,50,44,0.35);
+          border: 1px solid ${C.border};
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .content-scroll {
+          flex: 1;
+          overflow-y: auto;
+          padding: 16px 18px 80px;
+        }
+        .content-scroll::-webkit-scrollbar { width: 6px; }
         .content-scroll::-webkit-scrollbar-thumb { background: #C8D1CC; border-radius: 6px; }
+
+        .desktop-header-nav { display: none; }
+        .mobile-bottom-nav { display: flex; }
+
+        /* ── Desktop Breakpoint (>= 768px) ── */
+        @media (min-width: 768px) {
+          .app-viewport-wrapper {
+            padding: 24px 20px;
+            align-items: flex-start;
+          }
+          .app-shell-container {
+            max-width: 1160px;
+            height: auto;
+            min-height: 90vh;
+            max-height: none;
+            border-radius: 24px;
+            box-shadow: 0 24px 80px -15px rgba(23,50,44,0.2);
+          }
+          .mobile-bottom-nav {
+            display: none !important;
+          }
+          .desktop-header-nav {
+            display: flex !important;
+          }
+          .content-scroll {
+            padding: 20px 28px 36px;
+            overflow-y: visible;
+          }
+          .emergency-fab {
+            bottom: 24px !important;
+            right: 28px !important;
+          }
+        }
       `}</style>
 
-      <div style={{ width: '100%', maxWidth: 440, height: '94vh', maxHeight: 860, background: C.frame, borderRadius: 28, boxShadow: '0 20px 60px -20px rgba(23,50,44,0.35)', border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+      <div className="app-shell-container">
 
         {/* Offline Banner */}
         {!isOnline && (
-          <div style={{ background: C.urgent, color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 12px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, zIndex: 100 }}>
-            <WifiOff size={13} />
+          <div style={{ background: C.urgent, color: '#fff', fontSize: 11.5, fontWeight: 700, padding: '6px 14px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, zIndex: 100 }}>
+            <WifiOff size={14} />
             <span>Offline · Reconnecting to Campus Health Network…</span>
           </div>
         )}
 
         {/* ─── Top Header with Brand & Demo Role Switcher ─── */}
-        <div style={{ padding: '14px 18px 10px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ padding: '16px 22px 12px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 10, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 11, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18 }}>
                 +
               </div>
               <div>
-                <div className="champ-heading" style={{ fontSize: 20, fontWeight: 800, color: C.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
+                <div className="champ-heading" style={{ fontSize: 22, fontWeight: 800, color: C.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
                   CHAMP
                 </div>
-                <div style={{ fontSize: 9.5, color: C.soft, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>
-                  {activePersona === 'doctor' ? '🩺 Doctor Consultation Desk' : activePersona === 'pharmacist' ? '💊 Pharmacy Dispensary' : 'Campus Health Portal'}
+                <div style={{ fontSize: 10.5, color: C.soft, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>
+                  {activePersona === 'doctor' ? '🩺 Doctor Consultation Desk' : activePersona === 'pharmacist' ? '💊 Pharmacy Dispensary' : 'Campus Health & Outbreak Portal'}
                 </div>
               </div>
             </div>
 
+            {/* Desktop Navigation Links (For Student View) */}
+            {activePersona === 'student' && (
+              <div className="desktop-header-nav" style={{ display: 'flex', gap: 6, background: C.bg, padding: '4px 6px', borderRadius: 14 }}>
+                {STUDENT_NAV.map(({ path, label, Icon }) => {
+                  const isActive = location.pathname === path;
+                  return (
+                    <button
+                      key={path}
+                      onClick={() => navigate(path)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 14px',
+                        borderRadius: 10,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        background: isActive ? C.primary : 'transparent',
+                        color: isActive ? '#fff' : C.soft,
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <Icon size={15} />
+                      <span>{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Header action buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {/* Health Pass / Student Profile Button */}
               {activePersona === 'student' && (
                 <button
                   onClick={() => setProfileOpen(true)}
                   title="My Medical Profile & Health ID"
                   style={{
-                    padding: '5px 9px',
+                    padding: '6px 11px',
                     borderRadius: 10,
                     background: C.primarySoft,
                     border: `1px solid ${C.primary}`,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 4,
-                    fontSize: 11,
+                    gap: 5,
+                    fontSize: 12,
                     fontWeight: 700,
                     color: C.primary,
                   }}
                 >
-                  <CreditCard size={13} />
-                  <span>ID</span>
+                  <CreditCard size={14} />
+                  <span>Health Pass</span>
                 </button>
               )}
 
@@ -155,30 +249,30 @@ export default function AppShell() {
                 onClick={() => handleOpenAI()}
                 title="Gemini AI Health Assistant"
                 style={{
-                  padding: '5px 9px',
+                  padding: '6px 12px',
                   borderRadius: 10,
                   background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 4,
-                  fontSize: 11,
+                  gap: 5,
+                  fontSize: 12,
                   fontWeight: 700,
                   color: '#fff',
                 }}
               >
-                <Sparkles size={13} color="#FFE699" />
-                <span>AI</span>
+                <Sparkles size={14} color="#FFE699" />
+                <span>AI Consult</span>
               </button>
 
               {/* Notification Bell */}
               <button
                 onClick={() => setNotifOpen(true)}
                 title="Notifications"
-                style={{ position: 'relative', width: 32, height: 32, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
+                style={{ position: 'relative', width: 34, height: 34, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
               >
-                <Bell size={15} color={hasAlert ? C.urgent : C.ink} />
+                <Bell size={16} color={hasAlert ? C.urgent : C.ink} />
                 {hasAlert && (
-                  <div style={{ position: 'absolute', top: -3, right: -3, width: 15, height: 15, borderRadius: '50%', background: C.urgent, color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ position: 'absolute', top: -3, right: -3, width: 16, height: 16, borderRadius: '50%', background: C.urgent, color: '#fff', fontSize: 9.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {liveUnread > 9 ? '9+' : liveUnread}
                   </div>
                 )}
@@ -188,65 +282,65 @@ export default function AppShell() {
               <button
                 onClick={logout}
                 title="Log out"
-                style={{ width: 32, height: 32, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
+                style={{ width: 34, height: 34, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
               >
-                <LogOut size={14} color={C.soft} />
+                <LogOut size={15} color={C.soft} />
               </button>
             </div>
           </div>
 
           {/* Persona Switcher Bar for Hackathon Demo */}
-          <div style={{ display: 'flex', background: C.bg, borderRadius: 12, padding: 2.5, gap: 2 }}>
+          <div style={{ display: 'flex', background: C.bg, borderRadius: 12, padding: 3, gap: 4 }}>
             <button
               onClick={() => { setActivePersona('student'); navigate('/'); }}
               style={{
                 flex: 1,
-                padding: '5px 0',
+                padding: '6px 0',
                 borderRadius: 9,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: 700,
                 background: activePersona === 'student' ? '#fff' : 'transparent',
                 color: activePersona === 'student' ? C.primary : C.soft,
                 boxShadow: activePersona === 'student' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
               }}
             >
-              🎓 Student
+              🎓 Student Portal
             </button>
             <button
               onClick={() => setActivePersona('doctor')}
               style={{
                 flex: 1,
-                padding: '5px 0',
+                padding: '6px 0',
                 borderRadius: 9,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: 700,
                 background: activePersona === 'doctor' ? '#fff' : 'transparent',
                 color: activePersona === 'doctor' ? C.primary : C.soft,
                 boxShadow: activePersona === 'doctor' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
               }}
             >
-              🩺 Doctor
+              🩺 Doctor Desk
             </button>
             <button
               onClick={() => setActivePersona('pharmacist')}
               style={{
                 flex: 1,
-                padding: '5px 0',
+                padding: '6px 0',
                 borderRadius: 9,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: 700,
                 background: activePersona === 'pharmacist' ? '#fff' : 'transparent',
                 color: activePersona === 'pharmacist' ? C.primary : C.soft,
                 boxShadow: activePersona === 'pharmacist' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
               }}
             >
-              💊 Pharmacy
+              💊 Pharmacy Dispensary
             </button>
           </div>
         </div>
 
         {/* ─── Scrollable Page content ─── */}
-        <div className="content-scroll" style={{ flex: 1, overflowY: 'auto', padding: '16px 18px 80px' }}>
+        <div className="content-scroll">
           {activePersona === 'doctor' ? (
             <DoctorPortal />
           ) : activePersona === 'pharmacist' ? (
@@ -264,15 +358,16 @@ export default function AppShell() {
             onClick={() => setEmergencyOpen(true)}
             className="emergency-fab"
             title="Emergency Help"
-            style={{ position: 'absolute', right: 16, bottom: 68, width: 48, height: 48, borderRadius: '50%', background: C.urgent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px -6px rgba(214,72,60,0.6)', zIndex: 10 }}
+            style={{ position: 'fixed', right: 20, bottom: 80, width: 52, height: 52, borderRadius: '50%', background: C.urgent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px -4px rgba(214,72,60,0.6)', zIndex: 50 }}
           >
-            <ShieldAlert size={20} color="#fff" />
+            <ShieldAlert size={22} color="#fff" />
           </button>
         )}
 
-        {/* ─── Bottom Navigation (Student View Only) ─── */}
+        {/* ─── Bottom Navigation (Mobile View Only) ─── */}
         {activePersona === 'student' && (
           <nav
+            className="mobile-bottom-nav"
             style={{
               position: 'absolute',
               bottom: 0,
@@ -281,7 +376,6 @@ export default function AppShell() {
               background: C.surface,
               borderTop: `1px solid ${C.border}`,
               padding: '6px 8px 8px',
-              display: 'flex',
               justifyContent: 'space-around',
               alignItems: 'center',
               zIndex: 20,
