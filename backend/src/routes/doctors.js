@@ -4,14 +4,14 @@ import { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
-// GET /api/doctors — list all active verified doctors with qualifications
+// GET /api/doctors — list all active verified distinct doctors
 router.get('/', async (_req, res, next) => {
   try {
     const result = await query(
-      `SELECT d.id, d.name, d.specialty, d.bio, d.avatar_url, d.qualifications, d.opd_room, d.shift_hours
+      `SELECT DISTINCT ON (d.name) d.id, d.name, d.specialty, d.bio, d.avatar_url, d.qualifications, d.opd_room, d.shift_hours
        FROM doctors d
        WHERE d.is_active = TRUE
-       ORDER BY d.name`
+       ORDER BY d.name ASC, d.id ASC`
     );
     res.json(result.rows);
   } catch (err) { next(err); }

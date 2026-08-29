@@ -30,19 +30,23 @@ export default function DoctorPortal() {
   const [selectedTimes, setSelectedTimes] = useState(DEFAULT_SLOTS);
   const [rxWriterOpen, setRxWriterOpen] = useState(false);
 
-  // 1. Fetch all campus doctors for the Doctor Desk Switcher
-  const { data: doctors = [] } = useQuery({
+  // 1. Fetch all campus doctors for the Doctor Desk Switcher (Strict deduplication)
+  const { data: rawDoctors = [] } = useQuery({
     queryKey: ['doctors'],
     queryFn: () => getDoctors().then((r) => r.data),
   });
 
+  const doctors = Array.from(
+    new Map(rawDoctors.map((d) => [d.name, d])).values()
+  );
+
   const [selectedDoctorId, setSelectedDoctorId] = useState('');
 
   useEffect(() => {
-    if (doctors.length > 0 && !selectedDoctorId) {
+    if (doctors.length > 0 && (!selectedDoctorId || !doctors.some(d => d.id === selectedDoctorId))) {
       setSelectedDoctorId(doctors[0].id);
     }
-  }, [doctors]);
+  }, [doctors, selectedDoctorId]);
 
   const activeDoctor = doctors.find((d) => d.id === selectedDoctorId) || doctors[0];
 

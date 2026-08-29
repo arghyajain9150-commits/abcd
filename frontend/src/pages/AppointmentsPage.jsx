@@ -85,10 +85,14 @@ function BookFlow({ onBooked }) {
   const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const [targetDate, setTargetDate] = useState(todayStr);
 
-  const { data: doctors = [], isLoading: loadingDoctors } = useQuery({
+  const { data: rawDoctors = [], isLoading: loadingDoctors } = useQuery({
     queryKey: ['doctors'],
     queryFn: () => getDoctors().then((r) => r.data),
   });
+
+  const doctors = Array.from(
+    new Map(rawDoctors.map((d) => [d.name, d])).values()
+  );
 
   const { data: slots = [], isLoading: loadingSlots } = useQuery({
     queryKey: ['slots', doctor?.id, targetDate],
