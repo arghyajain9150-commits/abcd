@@ -17,18 +17,30 @@ import emergencyRoutes from './routes/emergency.js';
 const app = express();
 const httpServer = http.createServer(app);
 
+// Dynamic CORS to support any Vercel domain, localhost, and custom domains with credentials
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow server-to-server or requests without origin
+    if (!origin) return callback(null, true);
+    // Reflect request origin so credentials: true is accepted by all browsers
+    callback(null, true);
+  },
+  credentials: true,
+};
+
 // ─── Socket.io Setup ──────────────────────────────────────────────
 export const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => callback(null, true),
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 initSocketHandlers(io);
 
 // ─── Middleware ───────────────────────────────────────────────────
-app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ─── Routes ───────────────────────────────────────────────────────
