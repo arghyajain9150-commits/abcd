@@ -19,6 +19,7 @@ import aiRoutes from './routes/ai.js';
 import pharmacyRoutes from './routes/pharmacy.js';
 import documentRoutes from './routes/documents.js';
 import supportRoutes from './routes/support.js';
+import openDataRoutes from './routes/openData.js';
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -60,19 +61,23 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/pharmacy', pharmacyRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/open', openDataRoutes);
 
-// Health check
-app.get('/api/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));
-
-// ─── Global error handler ─────────────────────────────────────────
-app.use((err, _req, res, _next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+// ─── Health check ─────────────────────────────────────────────────
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ─── Start ────────────────────────────────────────────────────────
+// ─── Global Error Handler ─────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('[ERROR]', err);
+  const status = err.status || 500;
+  const message = err.message || 'Internal Server Error';
+  res.status(status).json({ error: message });
+});
+
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
-  console.log(`🚀 CHAMP backend running on http://localhost:${PORT}`);
+  console.log(`🚀 CHAMP Backend running on http://localhost:${PORT}`);
   startCronJobs();
 });

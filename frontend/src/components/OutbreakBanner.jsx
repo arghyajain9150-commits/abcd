@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Sparkles, ChevronRight, Radio, MapPin } from 'lucide-react';
+import { AlertTriangle, Sparkles, ChevronRight, Radio, MapPin, TrendingUp } from 'lucide-react';
 import { getOutbreakAlerts } from '../api/index.js';
 import CampusRadarModal from './CampusRadarModal.jsx';
+import OutbreakForecastModal from './OutbreakForecastModal.jsx';
 
 const C = {
   urgent: '#D6483C',
@@ -17,6 +18,7 @@ const C = {
 
 export default function OutbreakBanner({ onOpenAI, onBook }) {
   const [radarOpen, setRadarOpen] = useState(false);
+  const [forecastOpen, setForecastOpen] = useState(false);
 
   const { data: alerts = [] } = useQuery({
     queryKey: ['outbreak-alerts'],
@@ -74,24 +76,45 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
             </span>
           </div>
 
-          <button
-            onClick={() => setRadarOpen(true)}
-            style={{
-              fontSize: 10.5,
-              fontWeight: 800,
-              background: '#fff',
-              padding: '3px 8px',
-              borderRadius: 99,
-              color: C.primary,
-              border: `1px solid ${C.primary}`,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Radio size={12} /> Live Radar
-          </button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={() => setForecastOpen(true)}
+              style={{
+                fontSize: 10.5,
+                fontWeight: 800,
+                background: '#fff',
+                padding: '3px 8px',
+                borderRadius: 99,
+                color: '#B45309',
+                border: '1px solid #F59E0B',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <TrendingUp size={12} /> AI Forecast
+            </button>
+
+            <button
+              onClick={() => setRadarOpen(true)}
+              style={{
+                fontSize: 10.5,
+                fontWeight: 800,
+                background: '#fff',
+                padding: '3px 8px',
+                borderRadius: 99,
+                color: C.primary,
+                border: `1px solid ${C.primary}`,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <Radio size={12} /> Live Radar
+            </button>
+          </div>
         </div>
 
         <div style={{ fontWeight: 800, fontSize: 14, color: C.ink, lineHeight: 1.3 }}>
@@ -103,7 +126,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
         </div>
 
         {/* Action buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 8, marginTop: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 6, marginTop: 4 }}>
           <button
             onClick={() => onOpenAI(activeAlert.disease_name)}
             style={{
@@ -114,7 +137,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 6,
+              gap: 4,
               cursor: 'pointer',
               color: C.ink,
               fontSize: 11.5,
@@ -122,7 +145,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
             }}
           >
             <Sparkles size={14} color={C.accent} />
-            <span>Check Symptoms (AI)</span>
+            <span>Check Symptoms</span>
           </button>
 
           <button
@@ -136,7 +159,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 6,
+              gap: 4,
               cursor: 'pointer',
               fontSize: 11.5,
               fontWeight: 700,
@@ -145,22 +168,32 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
             <MapPin size={13} />
             <span>Hostel Heatmap</span>
           </button>
+
+          <button
+            onClick={() => setForecastOpen(true)}
+            style={{
+              background: '#17322C',
+              color: '#fff',
+              borderRadius: 12,
+              padding: '8px 10px',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              cursor: 'pointer',
+              fontSize: 11.5,
+              fontWeight: 700,
+            }}
+          >
+            <TrendingUp size={13} color="#FFE699" />
+            <span>AI Projection</span>
+          </button>
         </div>
       </div>
 
-      {radarOpen && (
-        <CampusRadarModal
-          onClose={() => setRadarOpen(false)}
-          onOpenAI={() => {
-            setRadarOpen(false);
-            onOpenAI(activeAlert.disease_name);
-          }}
-          onBook={() => {
-            setRadarOpen(false);
-            if (onBook) onBook();
-          }}
-        />
-      )}
+      {radarOpen && <CampusRadarModal onClose={() => setRadarOpen(false)} />}
+      {forecastOpen && <OutbreakForecastModal onClose={() => setForecastOpen(false)} />}
     </>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Home, Calendar, Pill, HeartPulse, HelpCircle, Bell, ShieldAlert, Sparkles, Stethoscope, LogOut, User, CreditCard, WifiOff } from 'lucide-react';
+import { Home, Calendar, Pill, HeartPulse, HelpCircle, Bell, ShieldAlert, Sparkles, Stethoscope, LogOut, User, CreditCard, WifiOff, Globe } from 'lucide-react';
 import { getUnreadCount } from '../api/index.js';
 import { useAuthStore, useUIStore } from '../store/store.js';
 import { socket } from '../socket/socket.js';
@@ -22,11 +22,12 @@ const C = {
 };
 
 const STUDENT_NAV = [
-  { path: '/',             label: 'Home',     Icon: Home },
-  { path: '/appointments', label: 'Appts',    Icon: Calendar },
-  { path: '/pharmacy',     label: 'Pharmacy', Icon: Pill },
-  { path: '/wellness',     label: 'Wellness', Icon: HeartPulse },
-  { path: '/support',      label: 'Support',  Icon: HelpCircle },
+  { path: '/',             label: 'Home',          Icon: Home },
+  { path: '/appointments', label: 'Appts',         Icon: Calendar },
+  { path: '/pharmacy',     label: 'Pharmacy',      Icon: Pill },
+  { path: '/wellness',     label: 'Wellness',      Icon: HeartPulse },
+  { path: '/support',      label: 'Support',       Icon: HelpCircle },
+  { path: '/open-data',    label: 'Open Data API', Icon: Globe },
 ];
 
 export default function AppShell() {

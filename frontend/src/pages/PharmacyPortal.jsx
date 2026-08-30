@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pill, CheckCircle2, Clock, PackageCheck, AlertCircle, Search, User, FileText, Stethoscope, UploadCloud, Download, KeyRound, QrCode, ShieldCheck, X, Printer, Eye, BellRing, Filter, Check, Building2 } from 'lucide-react';
+import { Pill, CheckCircle2, Clock, PackageCheck, AlertCircle, Search, User, FileText, Stethoscope, UploadCloud, Download, KeyRound, QrCode, ShieldCheck, X, Printer, Eye, BellRing, Filter, Check, Building2, Camera, Sparkles } from 'lucide-react';
 import { getPharmacyPrescriptions, updatePrescriptionStatus, getPharmacyInventory, getStudentPrescriptions, getMyDocuments } from '../api/index.js';
 import { useAuthStore } from '../store/store.js';
 import DocumentUploadModal from '../components/DocumentUploadModal.jsx';
 import PrescriptionPrintModal from '../components/PrescriptionPrintModal.jsx';
 import DocumentViewerModal from '../components/DocumentViewerModal.jsx';
+import PrescriptionVisionScannerModal from '../components/PrescriptionVisionScannerModal.jsx';
 
 const C = {
   primary: '#2F7A68',
@@ -46,6 +47,7 @@ export default function PharmacyPortal({ persona = 'student' }) {
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [printRx, setPrintRx] = useState(null);
   const [previewDoc, setPreviewDoc] = useState(null);
+  const [visionModalOpen, setVisionModalOpen] = useState(false);
 
   // OTP Verification Modal for Pharmacist Handover
   const [dispenseModalRx, setDispenseModalRx] = useState(null);
@@ -157,8 +159,31 @@ export default function PharmacyPortal({ persona = 'student' }) {
           </div>
         </div>
 
-        <div style={{ background: 'rgba(255,255,255,0.18)', padding: '4px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700, textAlign: 'right' }}>
-          <span>Emergency: <strong>108</strong></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => setVisionModalOpen(true)}
+            style={{
+              background: 'linear-gradient(135deg, #FFE699 0%, #F5D590 100%)',
+              color: '#17322C',
+              padding: '6px 12px',
+              borderRadius: 10,
+              fontSize: 11.5,
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            }}
+          >
+            <Camera size={14} color="#17322C" />
+            <span>Scan Rx (Vision AI)</span>
+          </button>
+
+          <div style={{ background: 'rgba(255,255,255,0.18)', padding: '4px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700, textAlign: 'right' }}>
+            <span>Emergency: <strong>108</strong></span>
+          </div>
         </div>
       </div>
 
@@ -875,6 +900,15 @@ export default function PharmacyPortal({ persona = 'student' }) {
 
       {/* Inline Document Preview Modal */}
       {previewDoc && <DocumentViewerModal document={previewDoc} onClose={() => setPreviewDoc(null)} />}
+
+      {/* Gemini Vision AI Handwritten Prescription Scanner */}
+      {visionModalOpen && (
+        <PrescriptionVisionScannerModal
+          onClose={() => setVisionModalOpen(false)}
+          studentName={user?.name || 'Campus Student'}
+          studentEmail={user?.email || ''}
+        />
+      )}
     </div>
   );
 }

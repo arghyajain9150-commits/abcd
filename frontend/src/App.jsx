@@ -13,6 +13,7 @@ import AppointmentsPage from './pages/AppointmentsPage.jsx';
 import PharmacyPortal from './pages/PharmacyPortal.jsx';
 import WellnessPage from './pages/WellnessPage.jsx';
 import SupportPage from './pages/SupportPage.jsx';
+import OpenDataHubPage from './pages/OpenDataHubPage.jsx';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +76,7 @@ export default function App() {
             <Route path="pharmacy"     element={<PharmacyPortal />} />
             <Route path="wellness"     element={<WellnessPage />} />
             <Route path="support"      element={<SupportPage />} />
+            <Route path="open-data"    element={<OpenDataHubPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

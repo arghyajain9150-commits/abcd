@@ -27,9 +27,15 @@ export const getUnreadCount    = ()            => api.get('/notifications/unread
 export const getEmergencyContacts = ()         => api.get('/emergency');
 
 // ─── Gemini AI & Outbreak Advisories ─────────────────────────────
-export const triageSymptoms    = (data)        => api.post('/ai/triage', data);
-export const getOutbreakAlerts = ()            => api.get('/ai/outbreaks');
-export const getCampusRadar    = ()            => api.get('/ai/radar');
+export const triageSymptoms          = (data)        => api.post('/ai/triage', data);
+export const scanPrescriptionVision  = (data)        => api.post('/ai/scan-prescription', data);
+export const getOutbreakAlerts       = ()            => api.get('/ai/outbreaks');
+export const getCampusRadar          = ()            => api.get('/ai/radar');
+
+// ─── Open Innovation Public Health API ───────────────────────────
+export const getOpenStats            = ()            => api.get('/open/stats');
+export const getOpenOutbreaks        = ()            => api.get('/open/outbreaks');
+export const getOpenPharmacyStock    = ()            => api.get('/open/pharmacy-stock');
 
 // ─── Digital Prescriptions ───────────────────────────────────────
 export const createPrescription        = (data)              => api.post('/prescriptions', data);
