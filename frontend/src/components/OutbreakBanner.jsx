@@ -95,7 +95,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
           gap: 8,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div
               style={{
@@ -106,6 +106,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               <AlertTriangle size={15} color="#fff" />
@@ -116,7 +117,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
                 fontWeight: 800,
                 color: C.urgent,
                 textTransform: 'uppercase',
-                letterSpacing: '0.06em',
+                letterSpacing: '0.04em',
               }}
             >
               Active Campus Alert ({activeCases} Cases · R₀: {r0})
@@ -130,7 +131,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
                 fontSize: 10.5,
                 fontWeight: 800,
                 background: '#fff',
-                padding: '3px 8px',
+                padding: '4px 8px',
                 borderRadius: 99,
                 color: '#B45309',
                 border: '1px solid #F59E0B',
@@ -149,7 +150,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
                 fontSize: 10.5,
                 fontWeight: 800,
                 background: '#fff',
-                padding: '3px 8px',
+                padding: '4px 8px',
                 borderRadius: 99,
                 color: C.primary,
                 border: `1px solid ${C.primary}`,
@@ -174,7 +175,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
 
         {/* Affected Blocks Tags */}
         {affectedBlocks && affectedBlocks.length > 0 && (
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: 10.5, fontWeight: 700, color: C.urgent }}>Targeted Zones:</span>
             {affectedBlocks.map((b) => (
               <span key={b} style={{ background: '#fff', color: C.ink, border: '1px solid #F5C6BA', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4 }}>
@@ -185,7 +186,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
         )}
 
         {/* Action buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 6, marginTop: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6, marginTop: 4 }}>
           <button
             onClick={() => onOpenAI(diseaseName)}
             style={{

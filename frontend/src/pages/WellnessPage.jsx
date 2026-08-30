@@ -1755,14 +1755,14 @@ export default function WellnessPage() {
 
                 {/* Subscale Breakdown Breakdown Cards */}
                 {assessmentResult.subscales && assessmentResult.subscales.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${assessmentResult.subscales.length}, 1fr)`, gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                     {assessmentResult.subscales.map((sub, i) => (
-                      <div key={i} style={{ background: C.bg, borderRadius: 14, padding: 14, border: `1px solid ${C.border}` }}>
-                        <span style={{ fontSize: 10, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>{sub.label}</span>
+                      <div key={i} style={{ background: C.bg, borderRadius: 14, padding: 12, border: `1px solid ${C.border}` }}>
+                        <span style={{ fontSize: 9.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>{sub.label}</span>
                         <div style={{ fontSize: 18, fontWeight: 800, color: C.ink, marginTop: 2 }}>
                           {sub.score} <span style={{ fontSize: 12, color: C.soft }}>/ {sub.max}</span>
                         </div>
-                        <div style={{ fontSize: 11, color: sub.status.includes('ALERT') ? C.urgent : C.soft, fontWeight: sub.status.includes('ALERT') ? 800 : 500, marginTop: 2 }}>
+                        <div style={{ fontSize: 10.5, color: sub.status.includes('ALERT') ? C.urgent : C.soft, fontWeight: sub.status.includes('ALERT') ? 800 : 500, marginTop: 2 }}>
                           {sub.status}
                         </div>
                       </div>
@@ -2053,13 +2053,13 @@ export default function WellnessPage() {
             </div>
 
             {/* Stepper Progress Bar (Steps 1 to 5) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, background: C.bg, padding: 4, borderRadius: 14, border: `1px solid ${C.border}` }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, background: C.bg, padding: 3, borderRadius: 12, border: `1px solid ${C.border}` }}>
               {[
-                { step: 1, label: '1. Situation & Emotion' },
-                { step: 2, label: '2. Hot Thought' },
-                { step: 3, label: '3. Distortions' },
-                { step: 4, label: '4. Evidence Test' },
-                { step: 5, label: '5. Balanced Reframe' },
+                { step: 1, label: '1. Trigger' },
+                { step: 2, label: '2. Thought' },
+                { step: 3, label: '3. Distort' },
+                { step: 4, label: '4. Evidence' },
+                { step: 5, label: '5. Reframe' },
               ].map((s) => {
                 const isCurrent = cbtStep === s.step;
                 const isPast = cbtStep > s.step;
@@ -2069,9 +2069,9 @@ export default function WellnessPage() {
                     type="button"
                     onClick={() => setCbtStep(s.step)}
                     style={{
-                      padding: '8px 4px',
-                      borderRadius: 10,
-                      fontSize: 11,
+                      padding: '6px 2px',
+                      borderRadius: 8,
+                      fontSize: 10.5,
                       fontWeight: isCurrent ? 800 : 600,
                       background: isCurrent ? C.primary : (isPast ? C.primarySoft : 'transparent'),
                       color: isCurrent ? '#fff' : (isPast ? C.primary : C.soft),
@@ -2342,7 +2342,7 @@ export default function WellnessPage() {
                 </div>
 
                 {/* Dual-Column Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
                   
                   {/* Evidence FOR */}
                   <div style={{ background: '#fff', borderRadius: 14, padding: 14, border: `1.5px solid #F5C6BA`, display: 'flex', flexDirection: 'column', gap: 8 }}>

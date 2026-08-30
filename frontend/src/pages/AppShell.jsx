@@ -138,19 +138,41 @@ export default function AppShell() {
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           border-top: 1px solid #E1E3DA;
-          padding: 6px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+          padding: 4px 6px calc(6px + env(safe-area-inset-bottom, 0px));
           justify-content: space-around;
           align-items: center;
           z-index: 100;
           box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
         }
 
+        .header-btn-text {
+          display: none;
+        }
+        .persona-short-label {
+          display: inline;
+        }
+        .persona-full-label {
+          display: none;
+        }
+
+        @media (min-width: 520px) {
+          .header-btn-text {
+            display: inline;
+          }
+          .persona-short-label {
+            display: none;
+          }
+          .persona-full-label {
+            display: inline;
+          }
+        }
+
         .emergency-fab {
           position: fixed;
           right: 18px;
           bottom: 76px;
-          width: 52px;
-          height: 52px;
+          width: 50px;
+          height: 50px;
           border-radius: 50%;
           background: #D6483C;
           display: flex;
@@ -186,16 +208,16 @@ export default function AppShell() {
             padding: 12px 16px 64px !important;
           }
           .mobile-bottom-nav {
-            padding: 4px 8px !important;
+            padding: 2px 8px !important;
           }
           .mobile-bottom-nav button {
-            padding: 2px 6px !important;
+            padding: 2px 4px !important;
           }
           .emergency-fab {
-            bottom: 58px !important;
+            bottom: 54px !important;
             right: 14px !important;
-            width: 44px !important;
-            height: 44px !important;
+            width: 42px !important;
+            height: 42px !important;
           }
         }
       `}</style>
@@ -211,20 +233,20 @@ export default function AppShell() {
         )}
 
         {/* ─── Top Header with Brand, Nav & Demo Role Switcher ─── */}
-        <div className="top-header-bar" style={{ padding: '16px 24px 12px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 80 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div className="top-header-bar" style={{ padding: '12px 16px 10px', display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 80 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
             
             {/* Brand Logo & Title */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 12, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 20, boxShadow: '0 4px 12px rgba(47,122,104,0.25)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18, boxShadow: '0 4px 12px rgba(47,122,104,0.25)', flexShrink: 0 }}>
                 +
               </div>
               <div>
-                <div className="champ-heading" style={{ fontSize: 22, fontWeight: 800, color: C.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
+                <div className="champ-heading" style={{ fontSize: 20, fontWeight: 800, color: C.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
                   CHAMP
                 </div>
-                <div style={{ fontSize: 10.5, color: C.soft, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>
-                  {activePersona === 'doctor' ? '🩺 Doctor Consultation Desk' : activePersona === 'pharmacist' ? '💊 Pharmacy Dispensary' : 'Campus Health & Outbreak Portal'}
+                <div style={{ fontSize: 10, color: C.soft, fontWeight: 700, letterSpacing: '0.03em', textTransform: 'uppercase', marginTop: 1 }}>
+                  {activePersona === 'doctor' ? '🩺 Doctor Desk' : activePersona === 'pharmacist' ? '💊 Dispensary' : 'Campus Health'}
                 </div>
               </div>
             </div>
@@ -260,28 +282,28 @@ export default function AppShell() {
             )}
 
             {/* Header action buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               {/* Health Pass / Student Profile Button */}
               {activePersona === 'student' && (
                 <button
                   onClick={() => setProfileOpen(true)}
                   title="My Medical Profile & Health ID"
                   style={{
-                    padding: '7px 12px',
-                    borderRadius: 10,
+                    padding: '6px 10px',
+                    borderRadius: 9,
                     background: C.primarySoft,
                     border: `1px solid ${C.primary}`,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 5,
-                    fontSize: 12,
+                    gap: 4,
+                    fontSize: 11.5,
                     fontWeight: 700,
                     color: C.primary,
                     transition: 'transform 0.15s ease',
                   }}
                 >
-                  <CreditCard size={14} />
-                  <span>Health Pass</span>
+                  <CreditCard size={13} />
+                  <span className="header-btn-text">Health Pass</span>
                 </button>
               )}
 
@@ -290,31 +312,32 @@ export default function AppShell() {
                 onClick={() => handleOpenAI()}
                 title="Gemini AI Health Assistant"
                 style={{
-                  padding: '7px 14px',
-                  borderRadius: 10,
+                  padding: '6px 12px',
+                  borderRadius: 9,
                   background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 5,
-                  fontSize: 12,
+                  gap: 4,
+                  fontSize: 11.5,
                   fontWeight: 700,
                   color: '#fff',
                   boxShadow: '0 4px 12px rgba(23,50,44,0.2)',
                 }}
               >
-                <Sparkles size={14} color="#FFE699" />
-                <span>AI Consult</span>
+                <Sparkles size={13} color="#FFE699" />
+                <span>AI</span>
+                <span className="header-btn-text">Consult</span>
               </button>
 
               {/* Notification Bell */}
               <button
                 onClick={() => setNotifOpen(true)}
                 title="Notifications"
-                style={{ position: 'relative', width: 36, height: 36, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
+                style={{ position: 'relative', width: 32, height: 32, borderRadius: 9, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}`, flexShrink: 0 }}
               >
-                <Bell size={16} color={hasAlert ? C.urgent : C.ink} />
+                <Bell size={15} color={hasAlert ? C.urgent : C.ink} />
                 {hasAlert && (
-                  <div style={{ position: 'absolute', top: -3, right: -3, width: 16, height: 16, borderRadius: '50%', background: C.urgent, color: '#fff', fontSize: 9.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ position: 'absolute', top: -3, right: -3, width: 15, height: 15, borderRadius: '50%', background: C.urgent, color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {liveUnread > 9 ? '9+' : liveUnread}
                   </div>
                 )}
@@ -324,22 +347,22 @@ export default function AppShell() {
               <button
                 onClick={logout}
                 title="Log out"
-                style={{ width: 36, height: 36, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
+                style={{ width: 32, height: 32, borderRadius: 9, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}`, flexShrink: 0 }}
               >
-                <LogOut size={15} color={C.soft} />
+                <LogOut size={14} color={C.soft} />
               </button>
             </div>
           </div>
 
           {/* Persona Switcher Bar for Hackathon Demo */}
-          <div style={{ display: 'flex', background: C.bg, borderRadius: 12, padding: 3, gap: 4, border: `1px solid ${C.border}` }}>
+          <div style={{ display: 'flex', background: C.bg, borderRadius: 10, padding: 2.5, gap: 2, border: `1px solid ${C.border}` }}>
             <button
               onClick={() => { setActivePersona('student'); navigate('/'); }}
               style={{
                 flex: 1,
-                padding: '6px 0',
-                borderRadius: 9,
-                fontSize: 12,
+                padding: '5px 0',
+                borderRadius: 8,
+                fontSize: 11.5,
                 fontWeight: 700,
                 background: activePersona === 'student' ? '#fff' : 'transparent',
                 color: activePersona === 'student' ? C.primary : C.soft,
@@ -347,15 +370,16 @@ export default function AppShell() {
                 transition: 'all 0.15s ease',
               }}
             >
-              🎓 Student Portal
+              <span className="persona-short-label">🎓 Student</span>
+              <span className="persona-full-label">🎓 Student Portal</span>
             </button>
             <button
               onClick={() => setActivePersona('doctor')}
               style={{
                 flex: 1,
-                padding: '6px 0',
-                borderRadius: 9,
-                fontSize: 12,
+                padding: '5px 0',
+                borderRadius: 8,
+                fontSize: 11.5,
                 fontWeight: 700,
                 background: activePersona === 'doctor' ? '#fff' : 'transparent',
                 color: activePersona === 'doctor' ? C.primary : C.soft,
@@ -363,15 +387,16 @@ export default function AppShell() {
                 transition: 'all 0.15s ease',
               }}
             >
-              🩺 Doctor Desk
+              <span className="persona-short-label">🩺 Doctor</span>
+              <span className="persona-full-label">🩺 Doctor Desk</span>
             </button>
             <button
               onClick={() => setActivePersona('pharmacist')}
               style={{
                 flex: 1,
-                padding: '6px 0',
-                borderRadius: 9,
-                fontSize: 12,
+                padding: '5px 0',
+                borderRadius: 8,
+                fontSize: 11.5,
                 fontWeight: 700,
                 background: activePersona === 'pharmacist' ? '#fff' : 'transparent',
                 color: activePersona === 'pharmacist' ? C.primary : C.soft,
@@ -379,7 +404,8 @@ export default function AppShell() {
                 transition: 'all 0.15s ease',
               }}
             >
-              💊 Pharmacy Dispensary
+              <span className="persona-short-label">💊 Pharmacy</span>
+              <span className="persona-full-label">💊 Pharmacy Dispensary</span>
             </button>
           </div>
         </div>
