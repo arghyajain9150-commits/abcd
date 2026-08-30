@@ -4,7 +4,9 @@ import {
   HeartPulse, MessageSquare, Calendar, CheckSquare, Users, ShieldAlert,
   Sparkles, Send, Trash2, ArrowRight, CheckCircle2, Clock, Phone, AlertTriangle,
   Plus, X, ChevronRight, User, ThumbsUp, Flag, RefreshCw, Play, Pause, RotateCcw,
-  Check, CalendarCheck, ShieldCheck, MapPin, Search, Wind, Award, ArrowLeft
+  Check, CalendarCheck, ShieldCheck, MapPin, Search, Wind, Volume2, VolumeX,
+  Smile, Frown, Meh, Compass, Feather, Flame, Sparkle, HelpCircle, ArrowLeft,
+  BookOpen, Music, CheckCheck, Eye
 } from 'lucide-react';
 import { useAuthStore } from '../store/store.js';
 
@@ -22,230 +24,269 @@ const C = {
   bg: '#F5F7F3',
 };
 
-// ─── 5 Standard Moods with Clinical Campus Wellness Tips ──────────
-const MOOD_OPTIONS = [
-  { value: 'very_low', label: 'Very Low', emoji: '😞', color: '#FBE7E4', text: '#D6483C', advice: 'You are safe and not alone. Consider taking a pause or scheduling a confidential chat with our campus counsellor.' },
-  { value: 'low',      label: 'Low',      emoji: '🙁', color: '#FFF4E5', text: '#B45309', advice: 'Feeling depleted? Try our 2-minute 4-7-8 breathing reset below, hydrate with water, and take a 10-minute fresh air break.' },
-  { value: 'okay',     label: 'Okay',     emoji: '😐', color: '#F0F2EB', text: '#5B7169', advice: 'A steady baseline! Focus on one small academic priority and maintain regular hydration throughout classes.' },
-  { value: 'good',     label: 'Good',     emoji: '🙂', color: '#E4EFEA', text: '#2F7A68', advice: 'Great mindset! Take a brisk walk around the campus lawns or library quad to sustain this positive flow.' },
-  { value: 'great',    label: 'Great',    emoji: '😄', color: '#D8F3E5', text: '#1B7A4B', advice: 'Channel this vibrant energy into challenging study tasks, sports, or supporting a hostel peer.' },
+// ─── Mood Data with CBT Coping Guidance ────────────────────────────
+const MOODS = [
+  { id: 'very_low', label: 'Overwhelmed', emoji: '😞', color: '#FBE7E4', text: '#D6483C', prompt: 'Academic Burnout', guidance: 'Your nervous system needs a pause. Step away from study materials, sip cold water, and try the 4-7-8 breathing reset below.' },
+  { id: 'anxious',  label: 'Anxious',     emoji: '😰', color: '#FFF4E5', text: '#B45309', prompt: 'Exam Pressure', guidance: 'Anxiety is just future-focused adrenaline. Try our 5-4-3-2-1 Sensory Grounding tool to anchor your mind back in the present.' },
+  { id: 'okay',     label: 'Neutral',     emoji: '😐', color: '#F0F2EB', text: '#5B7169', prompt: 'Routine Day', guidance: 'A solid steady baseline. Pick one key priority task today and take scheduled 5-minute movement breaks between study blocks.' },
+  { id: 'good',     label: 'Focused',     emoji: '🙂', color: '#E4EFEA', text: '#2F7A68', prompt: 'Productive Flow', guidance: 'Great state! Use the Ambient Lo-Fi study generator below to lock into deep focus for your next assignment.' },
+  { id: 'great',    label: 'Energized',   emoji: '😄', color: '#D8F3E5', text: '#1B7A4B', prompt: 'High Energy', guidance: 'Channel this positive momentum into sports at the campus ground or collaborating on team project milestones.' },
 ];
 
-// ─── Verified Official Crisis Helplines ────────────────────────────
+// ─── Verified Official Emergency & Crisis Contacts ────────────────
 const CRISIS_RESOURCES = [
   {
-    name: 'Tele-MANAS (National Mental Health Helpline)',
-    purpose: '24/7 Free government tele-mental health support across 20+ Indian languages with clinical psychologists and psychiatrists.',
-    availability: '24/7 · Toll-Free · Confidential',
+    name: 'Tele-MANAS (Govt. of India 24/7 National Mental Health)',
+    purpose: 'Free 24/7 confidential tele-counselling across 20+ languages with clinical psychologists.',
     phone: '14416',
-    altPhone: '1800-891-4416',
+    alt: '1800-891-4416',
+    badge: '24/7 Toll-Free',
     isEmergency: true,
   },
   {
-    name: 'KIRAN Mental Health Rehabilitation',
-    purpose: 'Ministry of Social Justice & Empowerment helpline providing early screening, first-aid, psychological support and crisis management.',
-    availability: '24/7 · Toll-Free',
+    name: 'KIRAN National Mental Health Helpline',
+    purpose: 'Ministry of Social Justice 24/7 early screening, first-aid psychological crisis management.',
     phone: '1800-599-0019',
+    badge: '24/7 Toll-Free',
     isEmergency: true,
   },
   {
-    name: 'Campus Medical Centre & Ambulance Hotline',
-    purpose: 'On-campus 24/7 emergency medical response, emergency casualty ward and paramedic dispatch.',
-    availability: '24/7 On-Call · IIT Campus Desk',
+    name: 'Campus Ambulance & Medical Casualty Desk',
+    purpose: '24/7 On-campus emergency paramedic response and immediate hospital dispatch.',
     phone: '108',
-    altPhone: '011-2659-1100',
+    alt: '011-2659-1100',
+    badge: 'Campus Emergency Desk',
     isEmergency: true,
   },
   {
-    name: 'National Emergency Response Centre',
-    purpose: 'Unified emergency services (Police, Fire, Ambulance, Disaster Management).',
-    availability: '24/7 · Toll-Free National Service',
+    name: 'National Emergency Response (Police, Fire, Ambulance)',
+    purpose: 'Unified emergency response services across India.',
     phone: '112',
+    badge: 'National Helpline',
     isEmergency: true,
   },
   {
-    name: 'Campus Confidential Counselling Centre',
-    purpose: 'On-campus professional student counsellors and psychologists for academic anxiety, depression, and personal guidance.',
-    availability: 'Mon – Sat: 9:00 AM – 6:00 PM · OPD Room 201',
+    name: 'Campus Student Counselling Centre',
+    purpose: 'Confidential 1-on-1 psychotherapy & psychological consultations for university students.',
     phone: '+91 98765 11223',
+    badge: 'Mon–Sat 9AM–6PM (OPD 201)',
     isEmergency: false,
   },
 ];
 
-// ─── Campus Counsellors Directory ──────────────────────────────────
+// ─── Verified Campus Psychologists ─────────────────────────────────
 const COUNSELLORS = [
   {
     id: 'c1',
     name: 'Dr. Meera Nambiar',
     title: 'Lead Campus Psychologist & Psychotherapist',
     qualifications: 'M.Phil, Ph.D. in Clinical Psychology (NIMHANS)',
-    specializations: ['Academic Stress & Burnout', 'Exam Anxiety', 'Depressive Symptoms'],
-    description: '10+ years helping undergraduate and postgraduate students manage performance pressure, emotional balance, and sleep hygiene.',
-    location: 'Wellness Centre Room 201 · In-Person & Online Video',
+    specializations: ['Exam Stress & Burnout', 'Depressive Thoughts', 'Sleep Disorders'],
+    description: '10+ years specializing in undergraduate academic stress, imposter syndrome, and sleep hygiene.',
+    room: 'Wellness Centre Room 201',
     availableSlots: ['10:00 AM', '11:30 AM', '02:30 PM', '04:00 PM', '05:30 PM'],
-    sessionTypes: ['In-Person (Room 201)', 'Confidential Online Video'],
+    sessionTypes: ['In-Person (Room 201)', 'Confidential Video Link'],
   },
   {
     id: 'c2',
     name: 'Dr. Rajesh Sharma',
     title: 'Senior Student Wellness Counsellor',
     qualifications: 'M.A., M.Phil (Cognitive Behavioral Therapy)',
-    specializations: ['Hostel Adjustment & Loneliness', 'Time Management', 'Relationship Support'],
-    description: 'Specializes in practical CBT strategies to overcome chronic procrastination, social isolation in hostels, and interpersonal conflicts.',
-    location: 'Wellness Centre Room 203 · In-Person & Online Video',
+    specializations: ['Hostel Adjustment', 'Procrastination', 'Relationship Support'],
+    description: 'Practical CBT strategies to overcome chronic study procrastination, social anxiety, and hostel loneliness.',
+    room: 'Wellness Centre Room 203',
     availableSlots: ['09:30 AM', '11:00 AM', '02:00 PM', '03:30 PM', '05:00 PM'],
-    sessionTypes: ['In-Person (Room 203)', 'Confidential Online Video'],
+    sessionTypes: ['In-Person (Room 203)', 'Confidential Video Link'],
   },
   {
     id: 'c3',
     name: 'Ms. Ananya Sen',
     title: 'Youth Mental Health & Crisis Counsellor',
     qualifications: 'M.Sc. Counselling Psychology',
-    specializations: ['Panic Attacks & Acute Stress', 'Mindfulness', 'Self-Esteem'],
-    description: 'Empathetic, non-judgmental guidance focusing on somatic grounding, emotional self-regulation, and overcoming imposter syndrome.',
-    location: 'Wellness Centre Room 205 · In-Person & Online Video',
+    specializations: ['Panic Attacks', 'Somatic Grounding', 'Mindfulness'],
+    description: 'Empathetic guidance focusing on nervous system regulation, breathing biofeedback, and self-compassion.',
+    room: 'Wellness Centre Room 205',
     availableSlots: ['10:30 AM', '12:00 PM', '03:00 PM', '04:30 PM', '06:00 PM'],
-    sessionTypes: ['In-Person (Room 205)', 'Confidential Online Video'],
+    sessionTypes: ['In-Person (Room 205)', 'Confidential Video Link'],
   },
 ];
 
-// ─── Initial Anonymous Community Reflections & Peer Initiatives ────
-const INITIAL_NOT_ALONE_POSTS = [
-  {
-    id: 101,
-    text: "I've been feeling completely overwhelmed with midterms and imposter syndrome lately. If you're feeling behind, you're definitely not alone.",
-    timestamp: '2 hours ago',
-    relateCount: 38,
-    userRelated: false,
-    category: 'Academic Stress',
-  },
-  {
-    id: 102,
-    text: "Moved into the hostel two weeks ago and feeling homesick and anxious. Reminding myself that adjusting takes time and it gets easier day by day.",
-    timestamp: '5 hours ago',
-    relateCount: 52,
-    userRelated: false,
-    category: 'Hostel Adjustment',
-  },
-  {
-    id: 103,
-    text: "Took a 20-minute walk around the campus lake without my phone today when I felt a panic attack coming. It really helped ground me.",
-    timestamp: 'Yesterday',
-    relateCount: 29,
-    userRelated: false,
-    category: 'Self-Care',
-  },
-  {
-    id: 104,
-    text: "Finally booked a session with Dr. Meera at the wellness centre after hesitating for months. There is zero shame in asking for help.",
-    timestamp: '2 days ago',
-    relateCount: 64,
-    userRelated: false,
-    category: 'Support',
-  },
-];
-
-const INITIAL_PEER_TIPS = [
+// ─── Initial Campus Peer Sticky Notes ──────────────────────────────
+const INITIAL_STICKY_NOTES = [
   {
     id: 1,
-    title: 'Hostel Block B Hydration & Electrolyte Hub',
-    author: 'Aarav S. (Block B Rm 204)',
-    category: 'Outbreak Prevention',
-    upvotes: 48,
-    upvoted: false,
-    text: 'During this flu and eye-infection season, we set up an ORS and clean paper napkin station near the Block B 2nd floor cooler. Please avoid shared towels!',
+    tag: 'Academic Stress',
+    text: "Felt like everyone in my lab was way smarter than me. Talked to Dr. Meera and realized 90% of students feel imposter syndrome. Be kind to yourself.",
+    author: '3rd Year B.Tech',
+    time: '2 hours ago',
+    likes: 42,
+    liked: false,
+    color: '#FFF8E6',
   },
   {
     id: 2,
-    title: '20-20-20 Rule for Exam Season Screen Glare',
-    author: 'Priya M. (Biotech Dept)',
-    category: 'Eye Care & Study',
-    upvotes: 39,
-    upvoted: false,
-    text: 'Every 20 minutes of coding or studying, look at an object 20 feet away for 20 seconds. Drastically cuts down dry eye fatigue and headaches.',
+    tag: 'Hostel Life',
+    text: "Hostel Block B set up an ORS & paper napkin station on 2nd floor during this eye-flu wave. If you're sick in your room, message the group for meal delivery!",
+    author: 'Hostel Council',
+    time: '4 hours ago',
+    likes: 58,
+    liked: false,
+    color: '#E4EFEA',
   },
   {
     id: 3,
-    title: 'Isolation Meal Buddy System for Sick Students',
-    author: 'Sidharth V. (Hostel Council)',
-    category: 'Community Support',
-    upvotes: 62,
-    upvoted: false,
-    text: 'If you are isolated with viral fever in your room, tag your room number in the hostel WhatsApp group. Volunteers will leave mess food trays outside your door.',
+    tag: 'Exam Grounding',
+    text: "The 20-20-20 rule during 6-hour coding stretches saved my eyes and cut down late-night tension headaches. Look 20ft away every 20 mins for 20 secs.",
+    author: 'Biotech Dept',
+    time: 'Yesterday',
+    likes: 31,
+    liked: false,
+    color: '#EBF3FF',
   },
   {
     id: 4,
-    title: 'Late Night Herbal Chamomile Tea at Campus Canteen',
-    author: 'Rohan K. (Mechanical)',
-    category: 'Sleep Hygiene',
-    upvotes: 27,
-    upvoted: false,
-    text: 'Switching from high-caffeine energy drinks to chamomile tea after midnight helped me fix sleep latency during exam week.',
+    tag: 'Mindfulness',
+    text: "Started leaving my phone in the hostel room for 30 minutes every evening to sit near the campus library fountain. Major mental reset.",
+    author: '2nd Year Dual Degree',
+    time: '2 days ago',
+    likes: 67,
+    liked: false,
+    color: '#F3E8FF',
   },
 ];
 
 export default function WellnessPage() {
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const userId = user?.id || 'guest_user';
+  const userId = user?.id || 'campus_student';
 
-  // Navigation tab: 'home' | 'ai_chat' | 'mood' | 'plan' | 'counsellors' | 'breathing' | 'community' | 'crisis'
-  const [activeTab, setActiveTab] = useState('home');
+  // ─── Active Tab / View ───────────────────────────────────────────
+  // 'sanctuary' (Main Dashboard) | 'chat' | 'counsellors' | 'breathing' | 'soundscape' | 'cbt_shredder' | 'notes' | 'crisis'
+  const [activeView, setActiveView] = useState('sanctuary');
 
-  // ─── 1. MOOD STATE ───────────────────────────────────────────────
-  const [todayMood, setTodayMood] = useState(() => {
+  // ─── 1. MOOD & STREAK STATE ──────────────────────────────────────
+  const [selectedMood, setSelectedMood] = useState(() => {
     try {
-      const saved = localStorage.getItem(`champ_mood_today_${userId}`);
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
+      const saved = localStorage.getItem(`champ_mood_${userId}`);
+      return saved ? JSON.parse(saved) : MOODS[3];
+    } catch { return MOODS[3]; }
   });
   const [moodNote, setMoodNote] = useState('');
-  const [moodHistory, setMoodHistory] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`champ_mood_history_${userId}`);
-      if (saved) return JSON.parse(saved);
-      return [
-        { date: '2026-08-25', mood: 'okay', note: 'Normal class day' },
-        { date: '2026-08-26', mood: 'low', note: 'Exhausted after lab submissions' },
-        { date: '2026-08-27', mood: 'good', note: 'Productive group study' },
-        { date: '2026-08-28', mood: 'great', note: 'Submitted project on time' },
-        { date: '2026-08-29', mood: 'good', note: 'Walked around campus lawns' },
-      ];
-    } catch { return []; }
-  });
+  const [moodNoteSaved, setMoodNoteSaved] = useState(false);
+  const [streakDays, setStreakDays] = useState(4);
 
-  const handleSelectMood = (moodVal) => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const newEntry = {
-      date: todayStr,
-      mood: moodVal,
-      note: moodNote.trim() || undefined,
-      timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-    };
-    setTodayMood(newEntry);
-    localStorage.setItem(`champ_mood_today_${userId}`, JSON.stringify(newEntry));
-
-    const filtered = moodHistory.filter((m) => m.date !== todayStr);
-    const updatedHistory = [newEntry, ...filtered];
-    setMoodHistory(updatedHistory);
-    localStorage.setItem(`champ_mood_history_${userId}`, JSON.stringify(updatedHistory));
+  const handleSelectMood = (mood) => {
+    setSelectedMood(mood);
+    localStorage.setItem(`champ_mood_${userId}`, JSON.stringify(mood));
   };
 
-  const handleSaveMoodNote = (e) => {
+  const handleSaveNote = (e) => {
     e.preventDefault();
-    if (!todayMood) return;
-    const updated = { ...todayMood, note: moodNote.trim() };
-    setTodayMood(updated);
-    localStorage.setItem(`champ_mood_today_${userId}`, JSON.stringify(updated));
-
-    const updatedHistory = moodHistory.map((m) => (m.date === updated.date ? updated : m));
-    setMoodHistory(updatedHistory);
-    localStorage.setItem(`champ_mood_history_${userId}`, JSON.stringify(updatedHistory));
+    if (!moodNote.trim()) return;
+    setMoodNoteSaved(true);
+    setTimeout(() => setMoodNoteSaved(false), 2000);
   };
 
-  // ─── 2. 4-7-8 PARASYMPATHETIC BREATHING TOOL STATE ─────────────────
+  // ─── 2. NATIVE WEB AUDIO AMBIENT SOUNDSCAPE GENERATOR ────────────
+  // Synthesizes natural calming ambient audio right in the browser (Rain, Brown Noise, 432Hz Alpha Waves, Ocean Wind)
+  const [soundPlaying, setSoundPlaying] = useState(null); // 'rain' | 'brown_noise' | 'alpha_waves' | null
+  const [soundVolume, setSoundVolume] = useState(0.5);
+  const audioCtxRef = useRef(null);
+  const audioNodesRef = useRef([]);
+
+  const stopAudio = () => {
+    if (audioNodesRef.current) {
+      audioNodesRef.current.forEach((node) => {
+        try { node.stop ? node.stop() : node.disconnect(); } catch {}
+      });
+      audioNodesRef.current = [];
+    }
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      try { audioCtxRef.current.close(); } catch {}
+      audioCtxRef.current = null;
+    }
+    setSoundPlaying(null);
+  };
+
+  const playSoundscape = (type) => {
+    if (soundPlaying === type) {
+      stopAudio();
+      return;
+    }
+    stopAudio();
+
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+
+      const masterGain = ctx.createGain();
+      masterGain.gain.setValueAtTime(soundVolume, ctx.currentTime);
+      masterGain.connect(ctx.destination);
+
+      if (type === 'rain' || type === 'brown_noise') {
+        // Generate continuous natural filtered noise buffer
+        const bufferSize = ctx.sampleRate * 2;
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        let lastOut = 0.0;
+
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          output[i] = (lastOut + 0.02 * white) / 1.02; // Brown noise curve
+          lastOut = output[i];
+          output[i] *= 3.5;
+        }
+
+        const whiteNoise = ctx.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+        whiteNoise.loop = true;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = type === 'rain' ? 'lowpass' : 'bandpass';
+        filter.frequency.value = type === 'rain' ? 800 : 400;
+
+        whiteNoise.connect(filter);
+        filter.connect(masterGain);
+        whiteNoise.start();
+
+        audioNodesRef.current = [whiteNoise, filter, masterGain];
+      } else if (type === 'alpha_waves') {
+        // Synthesize 432Hz deep meditative alpha study tone with gentle binaural oscillation
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        osc1.frequency.setValueAtTime(432, ctx.currentTime);
+        osc2.frequency.setValueAtTime(442, ctx.currentTime); // 10Hz Alpha beat
+
+        const oscGain = ctx.createGain();
+        oscGain.gain.setValueAtTime(0.3, ctx.currentTime);
+
+        osc1.connect(oscGain);
+        osc2.connect(oscGain);
+        oscGain.connect(masterGain);
+
+        osc1.start();
+        osc2.start();
+        audioNodesRef.current = [osc1, osc2, oscGain, masterGain];
+      }
+
+      setSoundPlaying(type);
+    } catch (err) {
+      console.warn('AudioContext not supported in this browser', err);
+    }
+  };
+
+  useEffect(() => {
+    return () => stopAudio();
+  }, []);
+
+  // ─── 3. 4-7-8 PARASYMPATHETIC BREATHING ENGINE ───────────────────
   const [breathingActive, setBreathingActive] = useState(false);
-  const [breathPhase, setBreathPhase] = useState('Inhale'); // Inhale (4s), Hold (7s), Exhale (8s)
+  const [breathPhase, setBreathPhase] = useState('Inhale'); // Inhale 4s -> Hold 7s -> Exhale 8s
   const [countdown, setCountdown] = useState(4);
+  const [breathCycles, setBreathCycles] = useState(0);
 
   useEffect(() => {
     let timer;
@@ -253,7 +294,6 @@ export default function WellnessPage() {
       timer = setInterval(() => {
         setCountdown((c) => {
           if (c > 1) return c - 1;
-
           if (breathPhase === 'Inhale') {
             setBreathPhase('Hold');
             return 7;
@@ -262,6 +302,7 @@ export default function WellnessPage() {
             return 8;
           } else {
             setBreathPhase('Inhale');
+            setBreathCycles((prev) => prev + 1);
             return 4;
           }
         });
@@ -278,256 +319,80 @@ export default function WellnessPage() {
     setBreathingActive(!breathingActive);
   };
 
-  const resetBreathing = () => {
-    setBreathingActive(false);
-    setBreathPhase('Inhale');
-    setCountdown(4);
-  };
+  // ─── 4. CBT WORRY SHREDDER & COGNITIVE REFRAMER ──────────────────
+  const [worryInput, setWorryInput] = useState('');
+  const [worryReframed, setWorryReframed] = useState(null);
+  const [shredding, setShredding] = useState(false);
 
-  // ─── 3. TASKS & PLAN MY DAY STATE ────────────────────────────────
-  const [tasks, setTasks] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`champ_tasks_${userId}`);
-      if (saved) return JSON.parse(saved);
-      return [
-        { id: 1, title: 'Review Database Lecture Notes (Unit 3)', section: 'today', priority: 'high', time: '11:00 AM', completed: false },
-        { id: 2, title: 'Take a 15-minute mindfulness walk around campus', section: 'today', priority: 'medium', time: '05:00 PM', completed: true },
-        { id: 3, title: 'Draft assignment report for Machine Learning', section: 'upcoming', priority: 'medium', time: 'Tomorrow 2 PM', completed: false },
-        { id: 4, title: 'Drink 2L water & take evening rest', section: 'today', priority: 'low', time: '08:00 PM', completed: false },
-      ];
-    } catch { return []; }
-  });
-
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskPriority, setNewTaskPriority] = useState('medium');
-  const [newTaskTime, setNewTaskTime] = useState('');
-  const [newTaskSection, setNewTaskSection] = useState('today');
-  const [taskFilter, setTaskFilter] = useState('all');
-
-  const saveTasks = (newTasks) => {
-    setTasks(newTasks);
-    localStorage.setItem(`champ_tasks_${userId}`, JSON.stringify(newTasks));
-  };
-
-  const handleAddTask = (e) => {
+  const handleReframeWorry = (e) => {
     e.preventDefault();
-    if (!newTaskTitle.trim()) return;
-    const item = {
-      id: Date.now(),
-      title: newTaskTitle.trim(),
-      section: newTaskSection,
-      priority: newTaskPriority,
-      time: newTaskTime.trim() || undefined,
-      completed: false,
-    };
-    saveTasks([item, ...tasks]);
-    setNewTaskTitle('');
-    setNewTaskTime('');
+    if (!worryInput.trim()) return;
+
+    setShredding(true);
+    setTimeout(() => {
+      setShredding(false);
+      setWorryReframed({
+        original: worryInput.trim(),
+        reframe: `Cognitive Reframe: Feeling like "${worryInput.trim()}" is an automatic stress response, not a confirmed factual reality. What is one concrete piece of evidence against this worry, and what is the single smallest action you can take in the next 15 minutes?`,
+        groundingAction: 'Take 3 deep grounding breaths, drink a glass of water, and break this problem into 3 smaller micro-tasks.',
+      });
+    }, 1200);
   };
 
-  const handleToggleTask = (id) => {
-    const updated = tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
-    saveTasks(updated);
+  const handleClearWorry = () => {
+    setWorryInput('');
+    setWorryReframed(null);
   };
 
-  const handleDeleteTask = (id) => {
-    const updated = tasks.filter((t) => t.id !== id);
-    saveTasks(updated);
-  };
-
-  // Schedule Time Blocks
-  const [timeBlocks, setTimeBlocks] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`champ_timeblocks_${userId}`);
-      if (saved) return JSON.parse(saved);
-      return [
-        { time: '09:00 AM', title: 'Classes & Morning Lectures', category: 'Academic' },
-        { time: '11:30 AM', title: 'Library Deep Focus Study', category: 'Focus' },
-        { time: '01:00 PM', title: 'Lunch & Screen-Free Break', category: 'Break' },
-        { time: '03:00 PM', title: 'Lab Project & Code Review', category: 'Academic' },
-        { time: '06:00 PM', title: 'Sports / Campus Walk & Personal Time', category: 'Wellness' },
-      ];
-    } catch { return []; }
-  });
-  const [newBlockTime, setNewBlockTime] = useState('');
-  const [newBlockTitle, setNewBlockTitle] = useState('');
-
-  const handleAddTimeBlock = (e) => {
-    e.preventDefault();
-    if (!newBlockTime.trim() || !newBlockTitle.trim()) return;
-    const updated = [...timeBlocks, { time: newBlockTime.trim(), title: newBlockTitle.trim(), category: 'Custom' }];
-    setTimeBlocks(updated);
-    localStorage.setItem(`champ_timeblocks_${userId}`, JSON.stringify(updated));
-    setNewBlockTime('');
-    setNewBlockTitle('');
-  };
-
-  const completedTaskCount = tasks.filter((t) => t.completed).length;
-  const remainingTaskCount = tasks.filter((t) => !t.completed).length;
-
-  // ─── 4. COUNSELLOR BOOKINGS STATE ────────────────────────────────
+  // ─── 5. COUNSELLOR BOOKING STATE ─────────────────────────────────
   const [counsellorBookings, setCounsellorBookings] = useState(() => {
     try {
-      const saved = localStorage.getItem(`champ_counsellor_sessions_${userId}`);
-      if (saved) return JSON.parse(saved);
-      return [];
+      const saved = localStorage.getItem(`champ_counsellor_bookings_${userId}`);
+      return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
+  const [selectedCounsellor, setSelectedCounsellor] = useState(null);
+  const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bookingSlot, setBookingSlot] = useState('');
+  const [sessionType, setSessionType] = useState('In-Person (Room 201)');
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  const [bookingCounsellor, setBookingCounsellor] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
-  const [selectedSessionType, setSelectedSessionType] = useState('In-Person (Room 201)');
-  const [bookingConfirmed, setBookingConfirmed] = useState(false);
-
-  const handleBookSession = () => {
-    if (!bookingCounsellor || !selectedTimeSlot) return;
-    const newSession = {
+  const handleConfirmBooking = () => {
+    if (!selectedCounsellor || !bookingSlot) return;
+    const newBooking = {
       id: Date.now(),
-      counsellor: bookingCounsellor.name,
-      title: bookingCounsellor.title,
-      date: selectedDate,
-      time: selectedTimeSlot,
-      sessionType: selectedSessionType,
+      counsellorName: selectedCounsellor.name,
+      title: selectedCounsellor.title,
+      room: selectedCounsellor.room,
+      date: bookingDate,
+      time: bookingSlot,
+      type: sessionType,
       status: 'Confirmed',
     };
-    const updated = [newSession, ...counsellorBookings];
+    const updated = [newBooking, ...counsellorBookings];
     setCounsellorBookings(updated);
-    localStorage.setItem(`champ_counsellor_sessions_${userId}`, JSON.stringify(updated));
-    setBookingConfirmed(true);
+    localStorage.setItem(`champ_counsellor_bookings_${userId}`, JSON.stringify(updated));
+    setBookingSuccess(true);
     setTimeout(() => {
-      setBookingConfirmed(false);
-      setBookingCounsellor(null);
-      setSelectedTimeSlot('');
-    }, 1500);
+      setBookingSuccess(false);
+      setSelectedCounsellor(null);
+      setBookingSlot('');
+    }, 1400);
   };
 
-  const handleCancelSession = (sessionId) => {
-    if (window.confirm('Are you sure you want to cancel this counselling appointment?')) {
-      const updated = counsellorBookings.filter((s) => s.id !== sessionId);
+  const handleCancelBooking = (id) => {
+    if (window.confirm('Cancel this confidential counselling appointment?')) {
+      const updated = counsellorBookings.filter((b) => b.id !== id);
       setCounsellorBookings(updated);
-      localStorage.setItem(`champ_counsellor_sessions_${userId}`, JSON.stringify(updated));
+      localStorage.setItem(`champ_counsellor_bookings_${userId}`, JSON.stringify(updated));
     }
   };
 
-  const nextCounsellorSession = counsellorBookings[0] || null;
-
-  // ─── 5. COMMUNITY & "YOU'RE NOT ALONE" PEER SUPPORT ──────────────
-  const [communitySubTab, setCommunitySubTab] = useState('solidarity'); // 'solidarity' | 'initiatives'
-  const [notAlonePosts, setNotAlonePosts] = useState(() => {
-    try {
-      const saved = localStorage.getItem('champ_not_alone_posts');
-      if (saved) return JSON.parse(saved);
-      return INITIAL_NOT_ALONE_POSTS;
-    } catch { return INITIAL_NOT_ALONE_POSTS; }
-  });
-  const [peerTips, setPeerTips] = useState(() => {
-    try {
-      const saved = localStorage.getItem('champ_peer_tips');
-      if (saved) return JSON.parse(saved);
-      return INITIAL_PEER_TIPS;
-    } catch { return INITIAL_PEER_TIPS; }
-  });
-
-  const [newPostText, setNewPostText] = useState('');
-  const [postModalOpen, setPostModalOpen] = useState(false);
-  const [postNotice, setPostNotice] = useState('');
-
-  // Share tip modal
-  const [tipModalOpen, setTipModalOpen] = useState(false);
-  const [newTipTitle, setNewTipTitle] = useState('');
-  const [newTipCategory, setNewTipCategory] = useState('Community Support');
-  const [newTipText, setNewTipText] = useState('');
-
-  const handleRelate = (id) => {
-    const updated = notAlonePosts.map((p) => {
-      if (p.id === id) {
-        return {
-          ...p,
-          relateCount: p.userRelated ? p.relateCount - 1 : p.relateCount + 1,
-          userRelated: !p.userRelated,
-        };
-      }
-      return p;
-    });
-    setNotAlonePosts(updated);
-    localStorage.setItem('champ_not_alone_posts', JSON.stringify(updated));
-  };
-
-  const handleUpvoteTip = (id) => {
-    const updated = peerTips.map((t) =>
-      t.id === id
-        ? {
-            ...t,
-            upvotes: t.upvoted ? t.upvotes - 1 : t.upvotes + 1,
-            upvoted: !t.upvoted,
-          }
-        : t
-    );
-    setPeerTips(updated);
-    localStorage.setItem('champ_peer_tips', JSON.stringify(updated));
-  };
-
-  const handleReportPost = (id) => {
-    alert('Thank you. This post has been flagged for moderator review.');
-  };
-
-  const handleShareExperience = (e) => {
-    e.preventDefault();
-    const text = newPostText.trim();
-    if (!text) return;
-
-    const dangerousPatterns = [/suicide/i, /kill myself/i, /self[- ]?harm/i, /end my life/i];
-    const isDangerous = dangerousPatterns.some((pattern) => pattern.test(text));
-
-    if (isDangerous) {
-      setPostNotice('If you are experiencing thoughts of self-harm or immediate crisis, please reach out to our Crisis Support helplines immediately. Your life matters.');
-      return;
-    }
-
-    const newPost = {
-      id: Date.now(),
-      text,
-      timestamp: 'Just now',
-      relateCount: 1,
-      userRelated: true,
-      category: 'Student Reflection',
-    };
-    const updated = [newPost, ...notAlonePosts];
-    setNotAlonePosts(updated);
-    localStorage.setItem('champ_not_alone_posts', JSON.stringify(updated));
-    setNewPostText('');
-    setPostNotice('');
-    setPostModalOpen(false);
-  };
-
-  const handleAddTip = (e) => {
-    e.preventDefault();
-    if (!newTipTitle.trim() || !newTipText.trim()) return;
-
-    const newTip = {
-      id: Date.now(),
-      title: newTipTitle.trim(),
-      author: 'You (Campus Student)',
-      category: newTipCategory,
-      upvotes: 1,
-      upvoted: true,
-      text: newTipText.trim(),
-    };
-
-    const updated = [newTip, ...peerTips];
-    setPeerTips(updated);
-    localStorage.setItem('champ_peer_tips', JSON.stringify(updated));
-    setNewTipTitle('');
-    setNewTipText('');
-    setTipModalOpen(false);
-  };
-
-  // ─── 6. DEDICATED AI WELLNESS CHATBOT STATE ──────────────────────
+  // ─── 6. AI COMPANION CHAT STATE ──────────────────────────────────
   const [chatMessages, setChatMessages] = useState([
     {
       role: 'assistant',
-      text: "Hello! I am your CHAMP AI Wellness Companion. Whether you are dealing with academic stress, exam pressure, feeling overwhelmed, or just need a calm space to organize your thoughts, I'm here to listen. How is your day going?",
+      text: "Hello! I am your CHAMP AI Wellness Companion. Whether you're dealing with midterm pressure, late-night exhaustion, or feeling lonely in the hostel, I'm here to listen without judgment. How can I help you feel more grounded right now?",
       timestamp: 'Just now',
     },
   ]);
@@ -536,18 +401,18 @@ export default function WellnessPage() {
   const chatBottomRef = useRef(null);
 
   useEffect(() => {
-    if (activeTab === 'ai_chat') {
+    if (activeView === 'chat') {
       chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatMessages, activeTab, aiTyping]);
+  }, [chatMessages, activeView, aiTyping]);
 
-  const handleSendChatMessage = (customText) => {
-    const query = customText || chatInput;
-    if (!query.trim() || aiTyping) return;
+  const handleSendChat = (customText) => {
+    const text = customText || chatInput;
+    if (!text.trim() || aiTyping) return;
 
     const userMsg = {
       role: 'user',
-      text: query.trim(),
+      text: text.trim(),
       timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -555,53 +420,50 @@ export default function WellnessPage() {
     if (!customText) setChatInput('');
     setAiTyping(true);
 
-    const lower = query.toLowerCase();
-    const isCrisis = /suicide|kill myself|end it all|die|self harm|hurt myself|can't go on/.test(lower);
+    const lower = text.toLowerCase();
+    const isCrisis = /suicide|kill myself|end my life|self harm|hurt myself|die|can't live/.test(lower);
 
     setTimeout(() => {
-      let aiResponseText = '';
-
+      let reply = '';
       if (isCrisis) {
-        aiResponseText = `🚨 **Please know that you are not alone, and there is immediate, compassionate support available right now.**
+        reply = `🚨 **Please know that your life matters deeply and you are not alone.**
 
-If you are in distress or thinking of self-harm, please connect with trained professionals immediately:
+If you are experiencing acute distress or thoughts of self-harm, please connect with these verified 24/7 clinical professionals right now:
 
-• **Tele-MANAS (24/7 National Mental Health Toll-Free)**: Call **14416** or **1800-891-4416**  
-• **KIRAN Helpline**: Call **1800-599-0019**  
-• **Campus Ambulance / Medical Emergency**: Call **108** or **112**  
+• **Tele-MANAS (24/7 National Mental Health Toll-Free)**: **14416** or **1800-891-4416**  
+• **KIRAN Govt. Helpline**: **1800-599-0019**  
+• **Campus Ambulance / Medical Casualty**: **108**  
 • **Campus Counselling Centre**: OPD Desk 201 (Mon–Sat)
 
-You can also tap the **"Crisis Support"** button above for instant 1-click calls. Please talk to someone you trust or reach out to these free helplines.`;
-      } else if (/stress|exam|pressure|study|overwhelmed|assignment/.test(lower)) {
-        aiResponseText = `It is completely natural to feel overwhelmed when academic demands pile up. Let's break this down into small, manageable steps:
+You can tap the **"Emergency Crisis Hub"** tab above for direct 1-click calls. Please reach out to someone you trust or speak with these free helplines.`;
+      } else if (/exam|pressure|overwhelm|assignment|fail|behind/.test(lower)) {
+        reply = `It is completely understandable to feel overwhelmed when deadlines pile up. Let's take a deep breath together.
 
-1. **Step away for 5 minutes:** Give your nervous system a brief pause. Try our 2-minute 4-7-8 breathing exercise in the top tab.
-2. **Prioritize just ONE single task:** Don't try to solve the entire semester right now. Pick the smallest, lowest-friction item and spend 20 minutes on it.
-3. **Use our Plan My Day tool:** Group your tasks into 'Today' and 'Upcoming' so they don't occupy mental RAM.
+Here is a practical, immediate 3-step action plan:
+1. **Turn on the Rain/Lo-Fi Ambient soundscape** in our top bar to block background hostel noise.
+2. **Use the Worry Shredder tool** below to write down your biggest anxiety and reframe it with CBT.
+3. **Pick ONE single task for 25 minutes** and ignore everything else.
 
-Would you like to try a quick grounding exercise, or should we organize your priority tasks together?`;
-      } else if (/lonely|isolated|nobody|alone|friend/.test(lower)) {
-        aiResponseText = `Feeling lonely or disconnected in a large campus environment happens to far more students than you might realize, even if people don't openly talk about it.
+Would you like to try a 2-minute breathing reset right now?`;
+      } else if (/lonely|isolated|homesick|roommate|friend/.test(lower)) {
+        reply = `Adjusting to hostel life and campus routines is an emotional journey, and feeling disconnected is far more common among students than it looks from the outside.
 
-Remember:
-• Be gentle with yourself—building meaningful connections takes time.
-• You can check our **"Community & Peer Support"** section to see shared experiences and hostel initiatives from fellow students.
-• Our campus counsellors (like Dr. Rajesh Sharma) frequently support students navigating hostel adjustments.
+Take a look at our **Campus Solidarity Wall**—you'll see dozens of peers experiencing the exact same feelings. If you'd like to talk to a human professional, Dr. Rajesh Sharma specializes in hostel adjustment and is available at Wellness Room 203.
 
-I am right here with you. What has been making you feel most disconnected today?`;
+I'm right here with you. What is one small comforting thing you can do for yourself tonight?`;
       } else {
-        aiResponseText = `Thank you for sharing that with me. Acknowledging how you feel is an important first step toward feeling more grounded.
+        reply = `Thank you for opening up and sharing that with me. Giving yourself permission to acknowledge your feelings is a major act of self-care.
 
-Remember that emotional wellbeing fluctuates day to day. Make sure you have had enough water today, take regular study breaks, and don't hesitate to reach out to campus resources if you need support.
+Remember that emotional energy ebbs and flows. Make sure you hydrate, take a 10-minute walk outside, and don't hesitate to book a session with our campus counsellors if things feel heavy.
 
-How can I help you best right now—organizing your day, trying the 4-7-8 breathing exercise, or connecting you with a counsellor?`;
+How can I support you best right now?`;
       }
 
       setChatMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          text: aiResponseText,
+          text: reply,
           timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -609,34 +471,161 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
     }, 900);
   };
 
-  const handleClearChat = () => {
-    if (window.confirm('Clear your conversation history?')) {
-      setChatMessages([
-        {
-          role: 'assistant',
-          text: "Conversation cleared. I'm here whenever you need supportive, confidential guidance. How can I help you today?",
-          timestamp: 'Just now',
-        },
-      ]);
-    }
+  // ─── 7. STICKY NOTES / SOLIDARITY WALL STATE ──────────────────────
+  const [stickyNotes, setStickyNotes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('champ_sticky_notes');
+      return saved ? JSON.parse(saved) : INITIAL_STICKY_NOTES;
+    } catch { return INITIAL_STICKY_NOTES; }
+  });
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [newNoteText, setNewNoteText] = useState('');
+  const [newNoteTag, setNewNoteTag] = useState('Academic Stress');
+
+  const handleLikeNote = (id) => {
+    const updated = stickyNotes.map((n) =>
+      n.id === id
+        ? { ...n, likes: n.liked ? n.likes - 1 : n.likes + 1, liked: !n.liked }
+        : n
+    );
+    setStickyNotes(updated);
+    localStorage.setItem('champ_sticky_notes', JSON.stringify(updated));
   };
 
-  // ─── NAV ITEMS ───────────────────────────────────────────────────
-  const NAV_ITEMS = [
-    { id: 'home',        label: 'Home',                  Icon: HeartPulse },
-    { id: 'ai_chat',     label: 'AI Chat',               Icon: MessageSquare },
-    { id: 'mood',        label: 'Mood',                  Icon: Sparkles },
-    { id: 'plan',        label: 'Plan My Day',           Icon: CheckSquare },
-    { id: 'counsellors', label: 'Counsellors',           Icon: User },
-    { id: 'breathing',   label: '4-7-8 Reset',           Icon: Wind },
-    { id: 'community',   label: 'Community & Peer Hub',  Icon: Users },
-    { id: 'crisis',      label: 'Crisis Support',        Icon: ShieldAlert, highlight: true },
-  ];
+  const handlePostNote = (e) => {
+    e.preventDefault();
+    if (!newNoteText.trim()) return;
+
+    const colors = ['#FFF8E6', '#E4EFEA', '#EBF3FF', '#F3E8FF'];
+    const newNote = {
+      id: Date.now(),
+      tag: newNoteTag,
+      text: newNoteText.trim(),
+      author: 'Campus Student',
+      time: 'Just now',
+      likes: 1,
+      liked: true,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    };
+
+    const updated = [newNote, ...stickyNotes];
+    setStickyNotes(updated);
+    localStorage.setItem('champ_sticky_notes', JSON.stringify(updated));
+    setNewNoteText('');
+    setNoteModalOpen(false);
+  };
+
+  // ─── 8. TASKS & POMODORO TIME BLOCK ──────────────────────────────
+  const [wellnessTasks, setWellnessTasks] = useState([
+    { id: 1, text: 'Take a 10-minute fresh air walk around campus lake', completed: true, time: 'Morning' },
+    { id: 2, text: 'Drink 2L water & take a screen-free lunch break', completed: false, time: 'Afternoon' },
+    { id: 3, text: '25-minute focused study sprint with Lo-Fi ambient audio', completed: false, time: 'Evening' },
+  ]);
+  const [newTaskInput, setNewTaskInput] = useState('');
+
+  const toggleTask = (id) => {
+    setWellnessTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+    );
+  };
+
+  const addTask = (e) => {
+    e.preventDefault();
+    if (!newTaskInput.trim()) return;
+    setWellnessTasks([
+      ...wellnessTasks,
+      { id: Date.now(), text: newTaskInput.trim(), completed: false, time: 'Today' },
+    ]);
+    setNewTaskInput('');
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       
-      {/* ─── Wellness Sub-Navigation Bar ─── */}
+      {/* ─── Top Ambient Audio & Mindful Sanctuary Bar ─── */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
+          borderRadius: 22,
+          padding: '16px 20px',
+          color: '#fff',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+          boxShadow: '0 8px 30px -8px rgba(23,50,44,0.3)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Feather size={22} color="#FFE699" />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A3D9C9' }}>
+                Campus Mindful Sanctuary
+              </span>
+              <span style={{ fontSize: 10.5, background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>
+                🔥 {streakDays}-Day Mindful Streak
+              </span>
+            </div>
+            <div className="champ-heading" style={{ fontSize: 18, fontWeight: 800, marginTop: 2 }}>
+              Good Day, {user?.name ? user.name.split(' ')[0] : 'Student'}
+            </div>
+          </div>
+        </div>
+
+        {/* Ambient Audio Synthesizer Quick Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.22)', padding: '6px 12px', borderRadius: 14 }}>
+          <Music size={15} color="#FFE699" />
+          <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>Ambient Sound:</span>
+          
+          <button
+            onClick={() => playSoundscape('rain')}
+            style={{
+              background: soundPlaying === 'rain' ? '#FFE699' : 'rgba(255,255,255,0.15)',
+              color: soundPlaying === 'rain' ? '#17322C' : '#fff',
+              border: 'none',
+              padding: '4px 10px',
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            🌧️ Rain {soundPlaying === 'rain' ? '▶' : ''}
+          </button>
+
+          <button
+            onClick={() => playSoundscape('alpha_waves')}
+            style={{
+              background: soundPlaying === 'alpha_waves' ? '#FFE699' : 'rgba(255,255,255,0.15)',
+              color: soundPlaying === 'alpha_waves' ? '#17322C' : '#fff',
+              border: 'none',
+              padding: '4px 10px',
+              borderRadius: 8,
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            🧘 432Hz Alpha {soundPlaying === 'alpha_waves' ? '▶' : ''}
+          </button>
+
+          {soundPlaying && (
+            <button
+              onClick={stopAudio}
+              title="Stop Ambient Audio"
+              style={{ background: 'rgba(214,72,60,0.85)', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: 8, fontSize: 10.5, fontWeight: 700, cursor: 'pointer' }}
+            >
+              <VolumeX size={13} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Navigation Tabs Bar ─── */}
       <div
         style={{
           display: 'flex',
@@ -649,12 +638,20 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
           scrollbarWidth: 'none',
         }}
       >
-        {NAV_ITEMS.map(({ id, label, Icon, highlight }) => {
-          const isActive = activeTab === id;
+        {[
+          { id: 'sanctuary',    label: '✨ Sanctuary Home',     Icon: HeartPulse },
+          { id: 'chat',         label: '💬 AI Companion',       Icon: MessageSquare },
+          { id: 'counsellors',  label: '🩺 Book Counsellor',    Icon: User },
+          { id: 'breathing',    label: '🫁 Breathing Reset',    Icon: Wind },
+          { id: 'cbt_shredder', label: '🧠 Worry Shredder',     Icon: Sparkles },
+          { id: 'notes',        label: '💌 Solidarity Wall',    Icon: Users },
+          { id: 'crisis',       label: '🚨 Crisis SOS',         Icon: ShieldAlert, highlight: true },
+        ].map(({ id, label, Icon, highlight }) => {
+          const isActive = activeView === id;
           return (
             <button
               key={id}
-              onClick={() => setActiveTab(id)}
+              onClick={() => setActiveView(id)}
               style={{
                 flexShrink: 0,
                 display: 'flex',
@@ -669,9 +666,7 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
                 background: isActive
                   ? highlight ? C.urgent : C.primary
                   : highlight ? C.urgentSoft : 'transparent',
-                color: isActive
-                  ? '#fff'
-                  : highlight ? C.urgent : C.soft,
+                color: isActive ? '#fff' : highlight ? C.urgent : C.soft,
                 transition: 'all 0.15s ease',
               }}
             >
@@ -682,11 +677,11 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
         })}
       </div>
 
-      {/* ─── Sub-Tab Back to Dashboard Button ─── */}
-      {activeTab !== 'home' && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* Subview Back Navigation Header */}
+      {activeView !== 'sanctuary' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 4 }}>
           <button
-            onClick={() => setActiveTab('home')}
+            onClick={() => setActiveView('sanctuary')}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -700,26 +695,25 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
               color: C.primary,
               cursor: 'pointer',
               boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-              transition: 'all 0.15s ease',
             }}
           >
             <ArrowLeft size={14} />
-            <span>Back to Wellness Home</span>
+            <span>Back to Sanctuary Dashboard</span>
           </button>
 
           <span style={{ fontSize: 11.5, color: C.soft }}>
-            Wellness / <strong style={{ color: C.ink }}>{NAV_ITEMS.find((n) => n.id === activeTab)?.label}</strong>
+            Sanctuary / <strong style={{ color: C.ink, textTransform: 'capitalize' }}>{activeView.replace('_', ' ')}</strong>
           </span>
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 1: WELLNESS HOME DASHBOARD
+          VIEW 1: SANCTUARY HOME (PRACTICAL 2-COLUMN DASHBOARD)
       ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'home' && (
+      {activeView === 'sanctuary' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           
-          {/* 1. Greeting & Quick Mood Selection */}
+          {/* Daily Mood Check-In Hero Card */}
           <div
             style={{
               background: C.surface,
@@ -732,23 +726,29 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
               gap: 14,
             }}
           >
-            <div>
-              <div className="champ-heading" style={{ fontSize: 20, fontWeight: 800, color: C.ink }}>
-                How are you feeling today?
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div className="champ-heading" style={{ fontSize: 18, fontWeight: 800, color: C.ink }}>
+                  How are you feeling right now?
+                </div>
+                <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
+                  Select your state to receive instant, tailored CBT coping strategies.
+                </div>
               </div>
-              <div style={{ fontSize: 12.5, color: C.soft, marginTop: 2 }}>
-                Take a mindful pause and log your emotional state.
-              </div>
+
+              <span style={{ fontSize: 11, background: C.bg, padding: '4px 10px', borderRadius: 99, color: C.soft, fontWeight: 700 }}>
+                Daily Awareness
+              </span>
             </div>
 
-            {/* Mood Options Selection */}
+            {/* 5 Distinct Mood Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-              {MOOD_OPTIONS.map((m) => {
-                const isSelected = todayMood?.mood === m.value;
+              {MOODS.map((m) => {
+                const isSelected = selectedMood?.id === m.id;
                 return (
                   <button
-                    key={m.value}
-                    onClick={() => handleSelectMood(m.value)}
+                    key={m.id}
+                    onClick={() => handleSelectMood(m)}
                     style={{
                       background: isSelected ? m.color : C.bg,
                       border: `1.5px solid ${isSelected ? m.text : C.border}`,
@@ -760,6 +760,7 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
                       gap: 4,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
                     }}
                   >
                     <span style={{ fontSize: 24 }}>{m.emoji}</span>
@@ -771,334 +772,278 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
               })}
             </div>
 
-            {/* Active Mood Advice Banner & Note Form */}
-            {todayMood && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {(() => {
-                  const match = MOOD_OPTIONS.find((m) => m.value === todayMood.mood);
-                  return (
-                    <div style={{ background: match?.color || C.primarySoft, borderRadius: 12, padding: '10px 14px', fontSize: 12, color: match?.text || C.primary, lineHeight: 1.4 }}>
-                      <strong>Campus Wellness Guidance:</strong> {match?.advice}
-                    </div>
-                  );
-                })()}
+            {/* Instant Tailored Guidance Box */}
+            <div style={{ background: selectedMood.color, borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, border: `1px solid ${selectedMood.text}33` }}>
+              <Sparkle size={18} color={selectedMood.text} style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: selectedMood.text, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  {selectedMood.label} · Clinical Coping Plan
+                </div>
+                <div style={{ fontSize: 12.5, color: selectedMood.text, marginTop: 2, lineHeight: 1.45, fontWeight: 500 }}>
+                  {selectedMood.guidance}
+                </div>
+              </div>
+            </div>
 
-                <form onSubmit={handleSaveMoodNote} style={{ display: 'flex', gap: 8 }}>
+            {/* Optional Personal Reflection Note */}
+            <form onSubmit={handleSaveNote} style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+              <input
+                type="text"
+                placeholder="Log a personal note (e.g. feeling anxious about afternoon algorithms midterm)..."
+                value={moodNote}
+                onChange={(e) => setMoodNote(e.target.value)}
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 12.5, background: C.bg, outline: 'none' }}
+              />
+              <button
+                type="submit"
+                style={{ background: C.primary, color: '#fff', padding: '0 16px', borderRadius: 10, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              >
+                {moodNoteSaved ? 'Saved! ✓' : 'Save Note'}
+              </button>
+            </form>
+          </div>
+
+          {/* ─── 2-COLUMN PRACTICAL DASHBOARD ─── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+            
+            {/* ── LEFT COLUMN: Interactive Tools ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              
+              {/* Tool 1: 4-7-8 Breathing Reset Widget */}
+              <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: '#D8F3E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Wind size={16} color="#1B7A4B" />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: C.ink }}>4-7-8 Somatic Breathing Reset</div>
+                      <div style={{ fontSize: 11, color: C.soft }}>Lowers cortisol & heart rate in 2 minutes</div>
+                    </div>
+                  </div>
+
+                  <span style={{ fontSize: 11, fontWeight: 700, color: C.primary, background: C.primarySoft, padding: '2px 8px', borderRadius: 6 }}>
+                    {breathCycles} Cycles Done
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
+                    borderRadius: 16,
+                    padding: '20px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 12,
+                    color: '#fff',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 90,
+                      height: 90,
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.18)',
+                      border: '2px solid rgba(255,255,255,0.4)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transform: breathingActive && breathPhase === 'Inhale' ? 'scale(1.2)' : breathingActive && breathPhase === 'Exhale' ? 'scale(0.85)' : 'scale(1)',
+                      transition: 'transform 3s ease-in-out',
+                    }}
+                  >
+                    <span style={{ fontSize: 11, fontWeight: 800, color: '#FFE699', textTransform: 'uppercase' }}>
+                      {breathingActive ? breathPhase : 'Ready'}
+                    </span>
+                    <span style={{ fontSize: 24, fontWeight: 800 }}>
+                      {breathingActive ? countdown : '4-7-8'}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={toggleBreathing}
+                    style={{
+                      background: '#fff',
+                      color: C.primary,
+                      border: 'none',
+                      padding: '8px 20px',
+                      borderRadius: 10,
+                      fontSize: 12.5,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    {breathingActive ? <Pause size={14} /> : <Play size={14} />}
+                    {breathingActive ? 'Pause Exercise' : 'Start 2-Min Reset'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Tool 2: Worry Shredder & Cognitive Reframer Preview */}
+              <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: '#FFF4E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Sparkles size={16} color={C.accent} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: C.ink }}>Worry Box & CBT Reframer</div>
+                      <div style={{ fontSize: 11, color: C.soft }}>Type catastrophic thoughts & reframe them</div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveView('cbt_shredder')}
+                    style={{ background: 'none', border: 'none', color: C.primary, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Open Full Tool →
+                  </button>
+                </div>
+
+                <form onSubmit={handleReframeWorry} style={{ display: 'flex', gap: 8 }}>
                   <input
                     type="text"
-                    placeholder="Add an optional note (e.g. feeling relieved after lab submission)..."
-                    value={moodNote || todayMood.note || ''}
-                    onChange={(e) => setMoodNote(e.target.value)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      borderRadius: 10,
-                      border: `1px solid ${C.border}`,
-                      fontSize: 12,
-                      background: C.bg,
-                      outline: 'none',
-                    }}
+                    placeholder="e.g. 'I feel like I am going to fail my project demo'..."
+                    value={worryInput}
+                    onChange={(e) => setWorryInput(e.target.value)}
+                    style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 12 }}
                   />
                   <button
                     type="submit"
-                    style={{
-                      background: C.primary,
-                      color: '#fff',
-                      padding: '8px 14px',
-                      borderRadius: 10,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
+                    style={{ background: C.primary, color: '#fff', padding: '0 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}
                   >
-                    Save Note
+                    Reframe
                   </button>
                 </form>
-              </div>
-            )}
-          </div>
 
-          {/* 2. Prominent Quick Actions */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
-            <button
-              onClick={() => setActiveTab('ai_chat')}
-              style={{
-                background: C.surface,
-                borderRadius: 16,
-                padding: '16px 14px',
-                border: `1px solid ${C.border}`,
-                textAlign: 'left',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <MessageSquare size={18} color={C.primary} />
+                {worryReframed && (
+                  <div style={{ background: '#F8F9F7', borderRadius: 12, padding: 12, border: `1px solid ${C.border}`, fontSize: 12, color: C.ink, lineHeight: 1.45 }}>
+                    <strong style={{ color: C.primary }}>💡 Rational Reality:</strong> {worryReframed.reframe}
+                  </div>
+                )}
               </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink }}>Talk to AI</div>
-                <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>Safe, supportive chat</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('counsellors')}
-              style={{
-                background: C.surface,
-                borderRadius: 16,
-                padding: '16px 14px',
-                border: `1px solid ${C.border}`,
-                textAlign: 'left',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FFF4E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={18} color={C.accent} />
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink }}>Book Counsellor</div>
-                <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>1-on-1 confidential</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('mood')}
-              style={{
-                background: C.surface,
-                borderRadius: 16,
-                padding: '16px 14px',
-                border: `1px solid ${C.border}`,
-                textAlign: 'left',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#EBF3FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Sparkles size={18} color="#2563EB" />
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink }}>My Mood</div>
-                <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>Timeline & notes</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('plan')}
-              style={{
-                background: C.surface,
-                borderRadius: 16,
-                padding: '16px 14px',
-                border: `1px solid ${C.border}`,
-                textAlign: 'left',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F3E8FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CheckSquare size={18} color="#7C3AED" />
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink }}>Plan My Day</div>
-                <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>Tasks & schedule</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('breathing')}
-              style={{
-                background: C.surface,
-                borderRadius: 16,
-                padding: '16px 14px',
-                border: `1px solid ${C.border}`,
-                textAlign: 'left',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-              }}
-            >
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#D8F3E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Wind size={18} color="#1B7A4B" />
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink }}>4-7-8 Reset</div>
-                <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>Calming breath</div>
-              </div>
-            </button>
-          </div>
-
-          {/* 3. Today's Overview (3 Compact Cards) */}
-          <div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: C.soft, textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.04em' }}>
-              Today's Overview
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
-              {/* Tasks Card */}
-              <div style={{ background: C.surface, borderRadius: 16, padding: 16, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Today's Tasks</div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: C.ink }}>{completedTaskCount}</span>
-                    <span style={{ fontSize: 12, color: C.soft }}>completed · <strong>{remainingTaskCount}</strong> remaining</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setActiveTab('plan')}
-                  style={{ background: C.bg, color: C.primary, border: `1px solid ${C.border}`, padding: '7px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', textAlign: 'center' }}
-                >
-                  View Tasks →
-                </button>
-              </div>
-
-              {/* Mood Card */}
-              <div style={{ background: C.surface, borderRadius: 16, padding: 16, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Today's Mood</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    {todayMood ? (
-                      <>
-                        <span style={{ fontSize: 22 }}>
-                          {MOOD_OPTIONS.find((m) => m.value === todayMood.mood)?.emoji || '🙂'}
-                        </span>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: C.ink }}>
-                          {MOOD_OPTIONS.find((m) => m.value === todayMood.mood)?.label || 'Logged'}
-                        </span>
-                      </>
-                    ) : (
-                      <span style={{ fontSize: 13, color: C.soft }}>Not logged yet</span>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setActiveTab('mood')}
-                  style={{ background: C.bg, color: C.primary, border: `1px solid ${C.border}`, padding: '7px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', textAlign: 'center' }}
-                >
-                  View History →
-                </button>
-              </div>
-
-              {/* Upcoming Session Card */}
-              <div style={{ background: C.surface, borderRadius: 16, padding: 16, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Upcoming Session</div>
-                  {nextCounsellorSession ? (
-                    <div style={{ marginTop: 4 }}>
-                      <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink }}>{nextCounsellorSession.counsellor}</div>
-                      <div style={{ fontSize: 11.5, color: C.primary, fontWeight: 600 }}>{nextCounsellorSession.date} at {nextCounsellorSession.time}</div>
+            {/* ── RIGHT COLUMN: Clinical Support & Campus Solidarity ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              
+              {/* Card 1: 1-Click Counsellor Booking Widget */}
+              <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <User size={16} color={C.primary} />
                     </div>
-                  ) : (
-                    <div style={{ fontSize: 13, color: C.soft, marginTop: 4 }}>No upcoming sessions</div>
-                  )}
-                </div>
-                <button
-                  onClick={() => setActiveTab('counsellors')}
-                  style={{ background: C.bg, color: C.primary, border: `1px solid ${C.border}`, padding: '7px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', textAlign: 'center' }}
-                >
-                  {nextCounsellorSession ? 'Manage Session →' : 'Book a Session →'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Community Peer Support & Anonymous Reflection Preview */}
-          <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div className="champ-heading" style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>
-                  🤝 Campus Community & Peer Support
-                </div>
-                <div style={{ fontSize: 11.5, color: C.soft }}>
-                  Anonymous student reflections and upvoteable hostel health initiatives.
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveTab('community')}
-                style={{
-                  background: C.primarySoft,
-                  color: C.primary,
-                  border: `1px solid ${C.primary}`,
-                  padding: '6px 12px',
-                  borderRadius: 10,
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  cursor: 'pointer',
-                }}
-              >
-                Open Hub →
-              </button>
-            </div>
-
-            {/* Preview of Top Post */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {notAlonePosts.slice(0, 2).map((post) => (
-                <div
-                  key={post.id}
-                  style={{
-                    background: C.bg,
-                    borderRadius: 14,
-                    padding: 12,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 6,
-                  }}
-                >
-                  <div style={{ fontSize: 12.5, color: C.ink, lineHeight: 1.45 }}>
-                    "{post.text}"
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: C.ink }}>Campus Psychologists</div>
+                      <div style={{ fontSize: 11, color: C.soft }}>Confidential 1-on-1 therapy & guidance</div>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
-                    <span style={{ fontSize: 11, color: C.soft }}>Anonymous Student · {post.timestamp}</span>
+
+                  <button
+                    onClick={() => setActiveView('counsellors')}
+                    style={{ background: 'none', border: 'none', color: C.primary, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    View Directory →
+                  </button>
+                </div>
+
+                {counsellorBookings.length > 0 ? (
+                  <div style={{ background: C.primarySoft, borderRadius: 12, padding: 12, border: `1px solid ${C.primary}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>Confirmed Upcoming Session</span>
+                      <span style={{ fontSize: 10, background: '#fff', padding: '1px 6px', borderRadius: 4, fontWeight: 700, color: '#1B7A4B' }}>Confirmed</span>
+                    </div>
+                    <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink, marginTop: 4 }}>{counsellorBookings[0].counsellorName}</div>
+                    <div style={{ fontSize: 11.5, color: C.soft }}>{counsellorBookings[0].date} at {counsellorBookings[0].time} · {counsellorBookings[0].type}</div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.bg, padding: '10px 12px', borderRadius: 12 }}>
+                    <span style={{ fontSize: 12, color: C.soft }}>No appointments scheduled</span>
                     <button
-                      onClick={() => handleRelate(post.id)}
-                      style={{
-                        background: post.userRelated ? '#D8F3E5' : '#fff',
-                        color: post.userRelated ? '#1B7A4B' : C.ink,
-                        border: `1px solid ${C.border}`,
-                        padding: '3px 9px',
-                        borderRadius: 8,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
+                      onClick={() => setActiveView('counsellors')}
+                      style={{ background: C.primary, color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}
                     >
-                      <ThumbsUp size={11} /> {post.relateCount} I relate
+                      Book Free Session
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Card 2: Campus Solidarity Sticky Notes Wall Preview */}
+              <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: '#EBF3FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Users size={16} color="#2563EB" />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: C.ink }}>Campus Solidarity Wall</div>
+                      <div style={{ fontSize: 11, color: C.soft }}>Anonymous peer reflections & solidarity</div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveView('notes')}
+                    style={{ background: 'none', border: 'none', color: C.primary, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    View All →
+                  </button>
+                </div>
+
+                {/* Top Note Preview */}
+                <div style={{ background: stickyNotes[0]?.color || '#FFF8E6', borderRadius: 14, padding: 12, border: `1px solid ${C.border}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: C.soft, textTransform: 'uppercase' }}>{stickyNotes[0]?.tag}</span>
+                    <span style={{ fontSize: 10.5, color: C.soft }}>{stickyNotes[0]?.author}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: C.ink, marginTop: 4, lineHeight: 1.45 }}>
+                    "{stickyNotes[0]?.text}"
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                    <button
+                      onClick={() => handleLikeNote(stickyNotes[0]?.id)}
+                      style={{ background: '#fff', border: `1px solid ${C.border}`, padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <ThumbsUp size={11} /> {stickyNotes[0]?.likes} I relate
                     </button>
                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Card 3: 24/7 Crisis SOS Quick Access */}
+              <div style={{ background: '#FFE8E5', borderRadius: 18, padding: 14, border: '1.5px solid #F5A9A0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <ShieldAlert size={20} color={C.urgent} />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 13, color: C.urgent }}>In Urgent Distress?</div>
+                    <div style={{ fontSize: 11, color: C.ink }}>Tele-MANAS & Campus Ambulance available 24/7</div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setActiveView('crisis')}
+                  style={{ background: C.urgent, color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 8, fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}
+                >
+                  Get Help Now
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 2: DEDICATED AI WELLNESS CHAT
+          VIEW 2: DEDICATED AI COMPANION (WYSA-STYLE EMPATHETIC CHAT)
       ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'ai_chat' && (
+      {activeView === 'chat' && (
         <div style={{ background: C.surface, borderRadius: 20, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', height: 600, overflow: 'hidden' }}>
-          
-          {/* Chat Header */}
+          {/* Header */}
           <div style={{ padding: '12px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: C.bg }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 34, height: 34, borderRadius: 10, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1110,34 +1055,12 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button
-                onClick={() => setActiveTab('crisis')}
-                style={{
-                  background: C.urgent,
-                  color: '#fff',
-                  padding: '6px 12px',
-                  borderRadius: 10,
-                  fontSize: 11.5,
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <ShieldAlert size={14} /> Get Help Now
-              </button>
-
-              <button
-                onClick={handleClearChat}
-                title="Clear Conversation"
-                style={{ width: 30, height: 30, borderRadius: 8, background: '#fff', border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.soft, cursor: 'pointer' }}
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
+            <button
+              onClick={() => setActiveView('crisis')}
+              style={{ background: C.urgent, color: '#fff', padding: '6px 12px', borderRadius: 10, fontSize: 11.5, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4, border: 'none', cursor: 'pointer' }}
+            >
+              <ShieldAlert size={14} /> Crisis SOS
+            </button>
           </div>
 
           {/* Messages Feed */}
@@ -1184,66 +1107,38 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
             <div ref={chatBottomRef} />
           </div>
 
-          {/* Quick Prompt Chips */}
+          {/* Prompt Chips */}
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', padding: '8px 14px', borderTop: `1px solid ${C.border}`, background: '#FAFAFA' }}>
-            {['Feeling overwhelmed with study', 'Exam anxiety tips', 'Trouble falling asleep', 'Need motivation'].map((prompt) => (
+            {['Feeling overwhelmed with midterms', 'How to stop late-night anxiety', 'Trouble focusing in study hall', 'Loneliness in hostel'].map((prompt) => (
               <button
                 key={prompt}
-                onClick={() => handleSendChatMessage(prompt)}
-                style={{
-                  background: '#fff',
-                  border: `1px solid ${C.border}`,
-                  padding: '4px 10px',
-                  borderRadius: 99,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: C.soft,
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
-                }}
+                onClick={() => handleSendChat(prompt)}
+                style={{ background: '#fff', border: `1px solid ${C.border}`, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, color: C.soft, whiteSpace: 'nowrap', cursor: 'pointer' }}
               >
                 {prompt}
               </button>
             ))}
           </div>
 
-          {/* Chat Input Bar */}
+          {/* Input Bar */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSendChatMessage();
+              handleSendChat();
             }}
             style={{ padding: '10px 14px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: 8, background: '#fff' }}
           >
             <input
               type="text"
-              placeholder="Type what's on your mind..."
+              placeholder="Tell me what is on your mind..."
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              style={{
-                flex: 1,
-                padding: '10px 14px',
-                borderRadius: 12,
-                border: `1px solid ${C.border}`,
-                fontSize: 13,
-                outline: 'none',
-              }}
+              style={{ flex: 1, padding: '10px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 13, outline: 'none' }}
             />
             <button
               type="submit"
               disabled={!chatInput.trim() || aiTyping}
-              style={{
-                background: C.primary,
-                color: '#fff',
-                padding: '0 16px',
-                borderRadius: 12,
-                border: 'none',
-                cursor: 'pointer',
-                opacity: !chatInput.trim() || aiTyping ? 0.6 : 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
+              style={{ background: C.primary, color: '#fff', padding: '0 16px', borderRadius: 12, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Send size={16} />
             </button>
@@ -1252,372 +1147,25 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 3: MOOD TRACKER & TIMELINE
+          VIEW 3: COUNSELLOR DIRECTORY & APPOINTMENT BOOKING
       ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'mood' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Today's Log Card */}
-          <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="champ-heading" style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>
-              Log or Update Today's Mood
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-              {MOOD_OPTIONS.map((m) => {
-                const isSelected = todayMood?.mood === m.value;
-                return (
-                  <button
-                    key={m.value}
-                    onClick={() => handleSelectMood(m.value)}
-                    style={{
-                      background: isSelected ? m.color : C.bg,
-                      border: `1.5px solid ${isSelected ? m.text : C.border}`,
-                      borderRadius: 12,
-                      padding: '10px 4px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: 4,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <span style={{ fontSize: 22 }}>{m.emoji}</span>
-                    <span style={{ fontSize: 10.5, fontWeight: 700, color: isSelected ? m.text : C.soft }}>
-                      {m.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {todayMood && (() => {
-              const match = MOOD_OPTIONS.find((m) => m.value === todayMood.mood);
-              return (
-                <div style={{ background: match?.color || C.primarySoft, borderRadius: 12, padding: '10px 14px', fontSize: 12, color: match?.text || C.primary, lineHeight: 1.4 }}>
-                  <strong>Wellness Recommendation:</strong> {match?.advice}
-                </div>
-              );
-            })()}
-
-            <form onSubmit={handleSaveMoodNote} style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="text"
-                placeholder="Add a short note about what contributed to your mood today..."
-                value={moodNote || todayMood?.note || ''}
-                onChange={(e) => setMoodNote(e.target.value)}
-                style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 12.5 }}
-              />
-              <button
-                type="submit"
-                style={{ background: C.primary, color: '#fff', padding: '8px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}
-              >
-                Save
-              </button>
-            </form>
-          </div>
-
-          {/* Visual Mood Timeline History */}
-          <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="champ-heading" style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>
-                Mood History & Timeline
-              </div>
-              <span style={{ fontSize: 11, color: C.soft }}>Personal awareness log</span>
-            </div>
-
-            {moodHistory.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 24, color: C.soft, fontSize: 12 }}>
-                No mood history recorded yet. Select an emoji above to begin logging.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {moodHistory.map((item, idx) => {
-                  const match = MOOD_OPTIONS.find((m) => m.value === item.mood) || MOOD_OPTIONS[2];
-                  return (
-                    <div
-                      key={idx}
-                      style={{
-                        background: C.bg,
-                        borderRadius: 14,
-                        padding: '10px 14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ fontSize: 22 }}>{match.emoji}</span>
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: 13, color: C.ink }}>
-                            {match.label}
-                          </div>
-                          {item.note && (
-                            <div style={{ fontSize: 11.5, color: C.soft, marginTop: 1 }}>
-                              "{item.note}"
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <span style={{ fontSize: 11, color: C.soft, fontWeight: 600 }}>
-                        {new Date(item.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────────
-          VIEW 4: PLAN MY DAY (TASKS + TIME MANAGEMENT)
-      ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'plan' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          
-          {/* Add Task Form */}
-          <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div className="champ-heading" style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>
-              Plan My Day: Add Task
-            </div>
-
-            <form onSubmit={handleAddTask} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <input
-                type="text"
-                placeholder="What do you want to accomplish? (e.g. Finish Data Structures Sheet)"
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                required
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 13 }}
-              />
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                <div>
-                  <label style={{ fontSize: 10.5, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Section</label>
-                  <select
-                    value={newTaskSection}
-                    onChange={(e) => setNewTaskSection(e.target.value)}
-                    style={{ width: '100%', marginTop: 3, padding: '7px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, background: '#fff' }}
-                  >
-                    <option value="today">Today</option>
-                    <option value="upcoming">Upcoming</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: 10.5, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Priority</label>
-                  <select
-                    value={newTaskPriority}
-                    onChange={(e) => setNewTaskPriority(e.target.value)}
-                    style={{ width: '100%', marginTop: 3, padding: '7px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, background: '#fff' }}
-                  >
-                    <option value="high">🔴 High Priority</option>
-                    <option value="medium">🟡 Medium Priority</option>
-                    <option value="low">🟢 Low Priority</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: 10.5, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Optional Time</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 3:00 PM"
-                    value={newTaskTime}
-                    onChange={(e) => setNewTaskTime(e.target.value)}
-                    style={{ width: '100%', marginTop: 3, padding: '7px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12 }}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                style={{ background: C.primary, color: '#fff', padding: '9px 0', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 2 }}
-              >
-                <Plus size={14} /> Add Task
-              </button>
-            </form>
-          </div>
-
-          {/* Tasks List with Filter Tabs */}
-          <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {[
-                  { id: 'all', label: `All (${tasks.length})` },
-                  { id: 'today', label: `Today (${tasks.filter((t) => t.section === 'today' && !t.completed).length})` },
-                  { id: 'upcoming', label: `Upcoming (${tasks.filter((t) => t.section === 'upcoming' && !t.completed).length})` },
-                  { id: 'completed', label: `Completed (${completedTaskCount})` },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setTaskFilter(tab.id)}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 8,
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      background: taskFilter === tab.id ? C.primary : C.bg,
-                      color: taskFilter === tab.id ? '#fff' : C.soft,
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {tasks
-                .filter((t) => {
-                  if (taskFilter === 'today') return t.section === 'today' && !t.completed;
-                  if (taskFilter === 'upcoming') return t.section === 'upcoming' && !t.completed;
-                  if (taskFilter === 'completed') return t.completed;
-                  return true;
-                })
-                .map((task) => (
-                  <div
-                    key={task.id}
-                    style={{
-                      background: task.completed ? '#F8F9F7' : C.bg,
-                      borderRadius: 12,
-                      padding: '10px 12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      border: `1px solid ${task.completed ? '#E8E8E0' : C.border}`,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <input
-                        type="checkbox"
-                        checked={task.completed}
-                        onChange={() => handleToggleTask(task.id)}
-                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: C.primary }}
-                      />
-                      <div>
-                        <div
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: task.completed ? C.soft : C.ink,
-                            textDecoration: task.completed ? 'line-through' : 'none',
-                          }}
-                        >
-                          {task.title}
-                        </div>
-                        <div style={{ fontSize: 10.5, color: C.soft, marginTop: 1 }}>
-                          {task.time && `⏰ ${task.time} · `}
-                          <span style={{ color: task.priority === 'high' ? C.urgent : task.priority === 'medium' ? C.accent : C.primary, fontWeight: 700 }}>
-                            {task.priority.toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleDeleteTask(task.id)}
-                      style={{ background: 'none', border: 'none', color: C.soft, cursor: 'pointer', padding: 4 }}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          {/* Simple Schedule / Time Blocks */}
-          <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="champ-heading" style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>
-                Daily Schedule Blocks
-              </div>
-              <span style={{ fontSize: 11, color: C.soft }}>Visual Flow</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {timeBlocks.map((b, i) => (
-                <div
-                  key={i}
-                  style={{
-                    background: C.bg,
-                    borderRadius: 12,
-                    padding: '8px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    borderLeft: `3px solid ${C.primary}`,
-                  }}
-                >
-                  <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 12, color: C.primary, width: 70 }}>
-                    {b.time}
-                  </span>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.ink, flex: 1 }}>
-                    {b.title}
-                  </span>
-                  <span style={{ fontSize: 10, background: '#fff', padding: '2px 6px', borderRadius: 4, color: C.soft }}>
-                    {b.category}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Quick Add Time Block */}
-            <form onSubmit={handleAddTimeBlock} style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <input
-                type="text"
-                placeholder="Time (e.g. 08:00 PM)"
-                value={newBlockTime}
-                onChange={(e) => setNewBlockTime(e.target.value)}
-                style={{ width: 140, padding: '7px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12 }}
-              />
-              <input
-                type="text"
-                placeholder="Activity / Block Title"
-                value={newBlockTitle}
-                onChange={(e) => setNewBlockTitle(e.target.value)}
-                style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12 }}
-              />
-              <button
-                type="submit"
-                style={{ background: C.primary, color: '#fff', padding: '0 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}
-              >
-                Add Block
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────────
-          VIEW 5: COUNSELLOR DIRECTORY & BOOKING
-      ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'counsellors' && (
+      {activeView === 'counsellors' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           
           {/* Active Bookings Banner */}
           {counsellorBookings.length > 0 && (
             <div style={{ background: C.primarySoft, borderRadius: 18, padding: 16, border: `1.5px solid ${C.primary}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  📅 Confirmed Upcoming Counselling Session
-                </span>
-                <span style={{ fontSize: 11, background: '#fff', padding: '2px 8px', borderRadius: 6, fontWeight: 700, color: '#1B7A4B' }}>
-                  Confirmed
-                </span>
-              </div>
-
-              {counsellorBookings.map((session) => (
-                <div key={session.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 14px', borderRadius: 12, border: `1px solid ${C.border}` }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>
+                📅 Confirmed Upcoming Counselling Appointments
+              </span>
+              {counsellorBookings.map((b) => (
+                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 14px', borderRadius: 12, border: `1px solid ${C.border}` }}>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: 14, color: C.ink }}>{session.counsellor}</div>
-                    <div style={{ fontSize: 11.5, color: C.soft }}>{session.date} at {session.time} · {session.sessionType}</div>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: C.ink }}>{b.counsellorName}</div>
+                    <div style={{ fontSize: 11.5, color: C.soft }}>{b.date} at {b.time} · {b.type} · {b.room}</div>
                   </div>
                   <button
-                    onClick={() => handleCancelSession(session.id)}
+                    onClick={() => handleCancelBooking(b.id)}
                     style={{ background: C.urgentSoft, color: C.urgent, border: 'none', padding: '5px 10px', borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}
                   >
                     Cancel
@@ -1627,135 +1175,82 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
             </div>
           )}
 
-          {/* Counsellor Directory Cards */}
-          <div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: C.soft, textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.04em' }}>
-              Campus Mental Health Professionals
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {COUNSELLORS.map((c) => (
-                <div
-                  key={c.id}
-                  style={{
-                    background: C.surface,
-                    borderRadius: 18,
-                    padding: 18,
-                    border: `1px solid ${C.border}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: 15.5, color: C.ink }}>{c.name}</div>
-                      <div style={{ fontSize: 12, color: C.primary, fontWeight: 700 }}>{c.title}</div>
-                      <div style={{ fontSize: 11, color: C.soft }}>{c.qualifications}</div>
-                    </div>
-                    <span style={{ fontSize: 11, background: C.bg, padding: '3px 8px', borderRadius: 6, color: C.soft }}>
-                      Room 201
-                    </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {COUNSELLORS.map((c) => (
+              <div
+                key={c.id}
+                style={{
+                  background: C.surface,
+                  borderRadius: 18,
+                  padding: 18,
+                  border: `1px solid ${C.border}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>{c.name}</div>
+                    <div style={{ fontSize: 12, color: C.primary, fontWeight: 700 }}>{c.title}</div>
+                    <div style={{ fontSize: 11, color: C.soft }}>{c.qualifications}</div>
                   </div>
-
-                  <div style={{ fontSize: 12, color: C.soft, lineHeight: 1.4 }}>
-                    {c.description}
-                  </div>
-
-                  {/* Specialization Tags */}
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {c.specializations.map((spec) => (
-                      <span
-                        key={spec}
-                        style={{
-                          background: C.bg,
-                          color: C.ink,
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                          fontSize: 10.5,
-                          fontWeight: 600,
-                          border: `1px solid ${C.border}`,
-                        }}
-                      >
-                        {spec}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Actions */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 12, marginTop: 4 }}>
-                    <button
-                      onClick={() => {
-                        setBookingCounsellor(c);
-                        setSelectedTimeSlot(c.availableSlots[0] || '10:00 AM');
-                      }}
-                      style={{
-                        background: C.primary,
-                        color: '#fff',
-                        padding: '8px 18px',
-                        borderRadius: 10,
-                        fontSize: 12.5,
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      <CalendarCheck size={14} /> Book Session
-                    </button>
-                  </div>
+                  <span style={{ fontSize: 11, background: C.bg, padding: '3px 8px', borderRadius: 6, color: C.soft, fontWeight: 600 }}>
+                    {c.room}
+                  </span>
                 </div>
-              ))}
-            </div>
+
+                <div style={{ fontSize: 12, color: C.soft, lineHeight: 1.45 }}>
+                  {c.description}
+                </div>
+
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {c.specializations.map((spec) => (
+                    <span key={spec} style={{ background: C.bg, color: C.ink, padding: '3px 8px', borderRadius: 6, fontSize: 10.5, fontWeight: 600, border: `1px solid ${C.border}` }}>
+                      {spec}
+                    </span>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: `1px solid ${C.border}`, paddingTop: 10, marginTop: 4 }}>
+                  <button
+                    onClick={() => {
+                      setSelectedCounsellor(c);
+                      setBookingSlot(c.availableSlots[0] || '10:00 AM');
+                    }}
+                    style={{ background: C.primary, color: '#fff', padding: '8px 18px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <CalendarCheck size={14} /> Book Free Session
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Booking Modal Flow */}
-          {bookingCounsellor && (
+          {/* Booking Modal */}
+          {selectedCounsellor && (
             <div
-              style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(23,50,44,0.65)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 90,
-                padding: 16,
-              }}
-              onClick={() => setBookingCounsellor(null)}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(23,50,44,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 90, padding: 16 }}
+              onClick={() => setSelectedCounsellor(null)}
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                  background: '#fff',
-                  borderRadius: 22,
-                  width: '100%',
-                  maxWidth: 460,
-                  padding: 20,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 14,
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-                }}
+                style={{ background: '#fff', borderRadius: 22, width: '100%', maxWidth: 460, padding: 20, display: 'flex', flexDirection: 'column', gap: 14, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>Book Confidential Session</div>
-                    <div style={{ fontSize: 11.5, color: C.primary, fontWeight: 600 }}>{bookingCounsellor.name}</div>
+                    <div style={{ fontSize: 11.5, color: C.primary, fontWeight: 600 }}>{selectedCounsellor.name}</div>
                   </div>
-                  <button onClick={() => setBookingCounsellor(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+                  <button onClick={() => setSelectedCounsellor(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
                 </div>
 
-                {bookingConfirmed ? (
-                  <div style={{ textAlign: 'center', padding: '30px 10px' }}>
-                    <CheckCircle2 size={40} color={C.primary} style={{ margin: '0 auto 10px' }} />
-                    <div style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>Session Confirmed!</div>
-                    <div style={{ fontSize: 12, color: C.soft, marginTop: 4 }}>
-                      Scheduled for {selectedDate} at {selectedTimeSlot}
-                    </div>
+                {bookingSuccess ? (
+                  <div style={{ textAlign: 'center', padding: '24px 10px' }}>
+                    <CheckCircle2 size={36} color={C.primary} style={{ margin: '0 auto 8px' }} />
+                    <div style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>Appointment Confirmed!</div>
+                    <div style={{ fontSize: 12, color: C.soft, marginTop: 4 }}>Scheduled for {bookingDate} at {bookingSlot}</div>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1764,28 +1259,28 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
                       <input
                         type="date"
                         min={new Date().toISOString().split('T')[0]}
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
+                        value={bookingDate}
+                        onChange={(e) => setBookingDate(e.target.value)}
                         style={{ width: '100%', marginTop: 4, padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5 }}
                       />
                     </div>
 
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Select Available Time</label>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Select Available Slot</label>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginTop: 4 }}>
-                        {bookingCounsellor.availableSlots.map((slot) => (
+                        {selectedCounsellor.availableSlots.map((slot) => (
                           <button
                             key={slot}
                             type="button"
-                            onClick={() => setSelectedTimeSlot(slot)}
+                            onClick={() => setBookingSlot(slot)}
                             style={{
                               padding: '8px 0',
                               borderRadius: 8,
                               fontSize: 11.5,
                               fontWeight: 700,
-                              background: selectedTimeSlot === slot ? C.primary : C.bg,
-                              color: selectedTimeSlot === slot ? '#fff' : C.ink,
-                              border: `1px solid ${selectedTimeSlot === slot ? C.primary : C.border}`,
+                              background: bookingSlot === slot ? C.primary : C.bg,
+                              color: bookingSlot === slot ? '#fff' : C.ink,
+                              border: `1px solid ${bookingSlot === slot ? C.primary : C.border}`,
                               cursor: 'pointer',
                             }}
                           >
@@ -1798,32 +1293,22 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
                     <div>
                       <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Session Type</label>
                       <select
-                        value={selectedSessionType}
-                        onChange={(e) => setSelectedSessionType(e.target.value)}
+                        value={sessionType}
+                        onChange={(e) => setSessionType(e.target.value)}
                         style={{ width: '100%', marginTop: 4, padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, background: '#fff' }}
                       >
-                        {bookingCounsellor.sessionTypes.map((type) => (
+                        {selectedCounsellor.sessionTypes.map((type) => (
                           <option key={type} value={type}>{type}</option>
                         ))}
                       </select>
                     </div>
 
                     <button
-                      onClick={handleBookSession}
-                      disabled={!selectedTimeSlot}
-                      style={{
-                        background: C.primary,
-                        color: '#fff',
-                        padding: '11px 0',
-                        borderRadius: 10,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        border: 'none',
-                        cursor: 'pointer',
-                        marginTop: 4,
-                      }}
+                      onClick={handleConfirmBooking}
+                      disabled={!bookingSlot}
+                      style={{ background: C.primary, color: '#fff', padding: '11px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', marginTop: 4 }}
                     >
-                      Confirm Confidential Booking
+                      Confirm Booking
                     </button>
                   </div>
                 )}
@@ -1834,15 +1319,15 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 6: 4-7-8 PARASYMPATHETIC BREATHING RESET
+          VIEW 4: BREATHING STUDIO & GUIDED VAGAL STIMULATION
       ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'breathing' && (
+      {activeView === 'breathing' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div
             style={{
               background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
               borderRadius: 24,
-              padding: '30px 20px',
+              padding: '36px 20px',
               color: '#fff',
               display: 'flex',
               flexDirection: 'column',
@@ -1852,25 +1337,22 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
               boxShadow: '0 12px 36px -8px rgba(23,50,44,0.35)',
             }}
           >
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A3D9C9' }}>
-                Guided Vagal Nerve Stimulation
-              </div>
-              <div className="champ-heading" style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>
-                4-7-8 Parasympathetic Breathing Reset
-              </div>
-              <div style={{ fontSize: 12.5, opacity: 0.88, marginTop: 4, maxWidth: 500 }}>
-                Inhale gently through your nose (4s) → Hold breath (7s) → Slow audible exhale (8s) to rapidly lower cortisol and heart rate.
-              </div>
+            <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A3D9C9' }}>
+              Guided Somatic Biofeedback
+            </span>
+            <div className="champ-heading" style={{ fontSize: 24, fontWeight: 800 }}>
+              4-7-8 Parasympathetic Vagal Reset
+            </div>
+            <div style={{ fontSize: 12.5, opacity: 0.88, maxWidth: 500 }}>
+              Inhale gently through your nose (4s) → Hold your breath (7s) → Slow complete audible exhale (8s). Lowers cortisol and sympathetic fight-or-flight within 2 minutes.
             </div>
 
-            {/* Interactive Expanding Breathing Sphere */}
             <div
               style={{
                 width: 140,
                 height: 140,
                 borderRadius: '50%',
-                background: 'rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.18)',
                 border: '2.5px solid rgba(255,255,255,0.4)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1889,280 +1371,184 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
               </span>
             </div>
 
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={toggleBreathing}
-                style={{
-                  background: '#fff',
-                  color: C.primary,
-                  padding: '10px 24px',
-                  borderRadius: 12,
-                  fontSize: 13.5,
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  border: 'none',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                }}
-              >
-                {breathingActive ? <Pause size={16} /> : <Play size={16} />}
-                {breathingActive ? 'Pause Exercise' : 'Start 2-Min Reset'}
-              </button>
-
-              {breathingActive && (
-                <button
-                  onClick={resetBreathing}
-                  style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    color: '#fff',
-                    padding: '10px 16px',
-                    borderRadius: 12,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <RotateCcw size={15} /> Reset
-                </button>
-              )}
-            </div>
+            <button
+              onClick={toggleBreathing}
+              style={{
+                background: '#fff',
+                color: C.primary,
+                padding: '10px 24px',
+                borderRadius: 12,
+                fontSize: 13.5,
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+            >
+              {breathingActive ? <Pause size={16} /> : <Play size={16} />}
+              {breathingActive ? 'Pause Session' : 'Start 2-Min Reset'}
+            </button>
           </div>
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 7: COMMUNITY & PEER SUPPORT HUB (SOLITARY + INITIATIVES)
+          VIEW 5: CBT WORRY SHREDDER & COGNITIVE REFRAMER
       ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'community' && (
+      {activeView === 'cbt_shredder' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: C.surface, borderRadius: 20, padding: 20, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <div className="champ-heading" style={{ fontSize: 18, fontWeight: 800, color: C.ink }}>
+                Worry Box & Cognitive Behavioral Reframer
+              </div>
+              <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
+                Unburden anxious, catastrophic thoughts from your mind. Our AI breaks them down using evidence-based CBT reframing.
+              </div>
+            </div>
+
+            <form onSubmit={handleReframeWorry} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <textarea
+                rows={3}
+                placeholder="What is making you feel most anxious right now? (e.g. 'I am terrified of failing my operating systems midterm and letting everyone down')..."
+                value={worryInput}
+                onChange={(e) => setWorryInput(e.target.value)}
+                required
+                style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 13, resize: 'none', outline: 'none' }}
+              />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 11.5, color: C.soft }}>🔒 100% Private · Zero data stored</span>
+                <button
+                  type="submit"
+                  disabled={shredding || !worryInput.trim()}
+                  style={{ background: C.primary, color: '#fff', padding: '9px 20px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Sparkles size={14} /> {shredding ? 'Reframing Thought…' : 'Shred & Reframe Anxious Thought'}
+                </button>
+              </div>
+            </form>
+
+            {worryReframed && (
+              <div style={{ background: '#F8F9F7', borderRadius: 16, padding: 16, border: `1.5px solid ${C.primarySoft}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: C.urgent, textTransform: 'uppercase' }}>Original Catastrophic Thought</span>
+                  <div style={{ fontSize: 13, fontStyle: 'italic', color: C.soft, marginTop: 2 }}>"{worryReframed.original}"</div>
+                </div>
+
+                <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>💡 Rational CBT Reframe</span>
+                  <div style={{ fontSize: 13, color: C.ink, marginTop: 2, lineHeight: 1.45 }}>{worryReframed.reframe}</div>
+                </div>
+
+                <div style={{ background: C.primarySoft, borderRadius: 10, padding: 10, fontSize: 12, color: C.primary, fontWeight: 600 }}>
+                  🎯 Immediate Action: {worryReframed.groundingAction}
+                </div>
+
+                <button
+                  onClick={handleClearWorry}
+                  style={{ alignSelf: 'flex-end', background: 'none', border: 'none', color: C.soft, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Clear & Write Another →
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────
+          VIEW 6: CAMPUS SOLIDARITY STICKY NOTES WALL
+      ──────────────────────────────────────────────────────────────── */}
+      {activeView === 'notes' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div className="champ-heading" style={{ fontSize: 18, fontWeight: 800, color: C.ink }}>
-                Campus Peer Support & Solidarity Hub
+                Campus Solidarity Wall
               </div>
               <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-                Anonymous peer reflections and student-led hostel wellness initiatives.
+                Anonymous reflections and encouragement from students across campus.
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 8 }}>
-              {communitySubTab === 'solidarity' ? (
-                <button
-                  onClick={() => setPostModalOpen(true)}
-                  style={{
-                    background: C.primary,
-                    color: '#fff',
-                    padding: '7px 14px',
-                    borderRadius: 10,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                  }}
-                >
-                  <Plus size={14} /> Share Anonymously
-                </button>
-              ) : (
-                <button
-                  onClick={() => setTipModalOpen(true)}
-                  style={{
-                    background: C.primary,
-                    color: '#fff',
-                    padding: '7px 14px',
-                    borderRadius: 10,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                  }}
-                >
-                  <Plus size={14} /> Share Campus Tip +
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Sub-Tab Selector: Anonymous Reflections vs Hostel Initiatives */}
-          <div style={{ display: 'flex', background: C.border, borderRadius: 12, padding: 3 }}>
             <button
-              onClick={() => setCommunitySubTab('solidarity')}
-              style={{
-                flex: 1,
-                padding: '8px 0',
-                borderRadius: 10,
-                fontSize: 12,
-                fontWeight: 700,
-                background: communitySubTab === 'solidarity' ? '#fff' : 'transparent',
-                color: communitySubTab === 'solidarity' ? C.primary : C.soft,
-                border: 'none',
-                cursor: 'pointer',
-              }}
+              onClick={() => setNoteModalOpen(true)}
+              style={{ background: C.primary, color: '#fff', padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
             >
-              🤝 You're Not Alone ({notAlonePosts.length} Reflections)
-            </button>
-            <button
-              onClick={() => setCommunitySubTab('initiatives')}
-              style={{
-                flex: 1,
-                padding: '8px 0',
-                borderRadius: 10,
-                fontSize: 12,
-                fontWeight: 700,
-                background: communitySubTab === 'initiatives' ? '#fff' : 'transparent',
-                color: communitySubTab === 'initiatives' ? C.primary : C.soft,
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              💡 Hostel Initiatives & Tips ({peerTips.length})
+              <Plus size={14} /> Leave a Note
             </button>
           </div>
 
-          {/* 1. Solidarity Feed */}
-          {communitySubTab === 'solidarity' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ background: C.bg, borderRadius: 12, padding: '10px 14px', fontSize: 11.5, color: C.soft, border: `1px solid ${C.border}` }}>
-                🔒 <strong>Strictly Anonymous:</strong> Zero usernames or profile links. Filtered for positive emotional connection.
+          {/* Sticky Notes Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+            {stickyNotes.map((note) => (
+              <div
+                key={note.id}
+                style={{
+                  background: note.color || '#FFF8E6',
+                  borderRadius: 16,
+                  padding: 16,
+                  border: `1px solid ${C.border}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, background: 'rgba(0,0,0,0.06)', padding: '2px 8px', borderRadius: 6, textTransform: 'uppercase' }}>
+                      {note.tag}
+                    </span>
+                    <span style={{ fontSize: 10.5, color: C.soft }}>{note.time}</span>
+                  </div>
+
+                  <div style={{ fontSize: 12.5, color: C.ink, marginTop: 8, lineHeight: 1.5 }}>
+                    "{note.text}"
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: 8 }}>
+                  <span style={{ fontSize: 11, color: C.soft }}>{note.author}</span>
+                  <button
+                    onClick={() => handleLikeNote(note.id)}
+                    style={{
+                      background: note.liked ? '#1B7A4B' : '#fff',
+                      color: note.liked ? '#fff' : C.ink,
+                      border: `1px solid ${C.border}`,
+                      padding: '4px 10px',
+                      borderRadius: 8,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <ThumbsUp size={11} /> {note.likes} I relate
+                  </button>
+                </div>
               </div>
-
-              {notAlonePosts.map((post) => (
-                <div
-                  key={post.id}
-                  style={{
-                    background: C.surface,
-                    borderRadius: 16,
-                    padding: 16,
-                    border: `1px solid ${C.border}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                  }}
-                >
-                  <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.5 }}>
-                    "{post.text}"
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
-                    <span style={{ fontSize: 11, color: C.soft }}>Anonymous Student · {post.timestamp}</span>
-
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        onClick={() => handleRelate(post.id)}
-                        style={{
-                          background: post.userRelated ? '#D8F3E5' : C.bg,
-                          color: post.userRelated ? '#1B7A4B' : C.ink,
-                          border: `1px solid ${post.userRelated ? '#1B7A4B' : C.border}`,
-                          padding: '5px 12px',
-                          borderRadius: 8,
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        <ThumbsUp size={12} /> {post.relateCount} I relate
-                      </button>
-
-                      <button
-                        onClick={() => handleReportPost(post.id)}
-                        title="Report"
-                        style={{ background: C.bg, border: `1px solid ${C.border}`, padding: '5px 9px', borderRadius: 8, color: C.soft, cursor: 'pointer' }}
-                      >
-                        <Flag size={12} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* 2. Hostel Initiatives & Community Tips Feed */}
-          {communitySubTab === 'initiatives' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10 }}>
-              {peerTips.map((tip) => (
-                <div
-                  key={tip.id}
-                  style={{
-                    background: C.surface,
-                    borderRadius: 16,
-                    padding: 16,
-                    border: `1px solid ${C.border}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: 10,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 10, fontWeight: 800, background: C.primarySoft, color: C.primary, padding: '2px 8px', borderRadius: 99, textTransform: 'uppercase' }}>
-                        {tip.category}
-                      </span>
-                      <span style={{ fontSize: 10.5, color: C.soft }}>{tip.author}</span>
-                    </div>
-
-                    <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink, marginTop: 6 }}>
-                      {tip.title}
-                    </div>
-                    <div style={{ fontSize: 12, color: C.soft, marginTop: 4, lineHeight: 1.45 }}>
-                      "{tip.text}"
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${C.border}`, paddingTop: 8, marginTop: 2 }}>
-                    <span style={{ fontSize: 11, color: C.soft }}>Campus Verified</span>
-                    <button
-                      onClick={() => handleUpvoteTip(tip.id)}
-                      style={{
-                        background: tip.upvoted ? '#D8F3E5' : C.bg,
-                        color: tip.upvoted ? '#1B7A4B' : C.ink,
-                        border: `1px solid ${tip.upvoted ? '#1B7A4B' : C.border}`,
-                        padding: '4px 10px',
-                        borderRadius: 8,
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <ThumbsUp size={13} /> {tip.upvotes}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 8: CRISIS SUPPORT & EMERGENCY HELPLINES
+          VIEW 7: 24/7 VERIFIED CRISIS SOS & EMERGENCY HUB
       ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'crisis' && (
+      {activeView === 'crisis' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div
             style={{
               background: 'linear-gradient(135deg, #FFE8E5 0%, #FFD6D0 100%)',
-              border: `1.5px solid #F5A9A0`,
+              border: '1.5px solid #F5A9A0',
               borderRadius: 20,
               padding: 20,
               color: C.ink,
@@ -2177,8 +1563,8 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
                 Immediate Crisis & Emergency Support
               </div>
             </div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.45, color: C.ink }}>
-              If you or someone you know is in acute distress, feeling overwhelmed, or experiencing thoughts of self-harm, please connect with these verified free helplines immediately. <strong>Your life and wellbeing matter deeply.</strong>
+            <div style={{ fontSize: 12.5, lineHeight: 1.45 }}>
+              If you or someone in your hostel is in acute emotional distress, having panic episodes, or experiencing thoughts of self-harm, connect with these free verified resources immediately. <strong>Your safety and life matter.</strong>
             </div>
           </div>
 
@@ -2201,7 +1587,7 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
                   <div>
                     <div style={{ fontWeight: 800, fontSize: 14.5, color: C.ink }}>{res.name}</div>
                     <div style={{ fontSize: 11, color: res.isEmergency ? C.urgent : C.primary, fontWeight: 700, marginTop: 1 }}>
-                      {res.availability}
+                      {res.badge}
                     </div>
                   </div>
 
@@ -2218,7 +1604,6 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
                       alignItems: 'center',
                       gap: 6,
                       textDecoration: 'none',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                     }}
                   >
                     <Phone size={13} /> Call {res.phone}
@@ -2229,9 +1614,9 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
                   {res.purpose}
                 </div>
 
-                {res.altPhone && (
+                {res.alt && (
                   <div style={{ fontSize: 11, color: C.soft }}>
-                    Alternate toll-free: <a href={`tel:${res.altPhone}`} style={{ color: C.ink, fontWeight: 700 }}>{res.altPhone}</a>
+                    Alternate helpline: <a href={`tel:${res.alt}`} style={{ color: C.ink, fontWeight: 700 }}>{res.alt}</a>
                   </div>
                 )}
               </div>
@@ -2240,141 +1625,45 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
         </div>
       )}
 
-      {/* ─── MODAL 1: SHARE ANONYMOUS REFLECTION ─── */}
-      {postModalOpen && (
+      {/* Modal: Post Sticky Note */}
+      {noteModalOpen && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(23,50,44,0.65)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 90,
-            padding: 16,
-          }}
-          onClick={() => setPostModalOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(23,50,44,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 90, padding: 16 }}
+          onClick={() => setNoteModalOpen(false)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#fff',
-              borderRadius: 22,
-              width: '100%',
-              maxWidth: 480,
-              padding: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            }}
+            style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 460, padding: 20, display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontWeight: 800, fontSize: 15, color: C.ink }}>Share an Anonymous Experience</div>
-              <button onClick={() => setPostModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+              <div style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>Post to Campus Solidarity Wall</div>
+              <button onClick={() => setNoteModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
             </div>
 
-            <div style={{ fontSize: 11.5, color: C.soft }}>
-              Write a short message to let peers know they are not alone. Zero names or identifying details will be attached.
-            </div>
-
-            {postNotice && (
-              <div style={{ background: C.urgentSoft, color: C.urgent, padding: '10px 12px', borderRadius: 10, fontSize: 12, lineHeight: 1.4 }}>
-                {postNotice}
-              </div>
-            )}
-
-            <form onSubmit={handleShareExperience} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <textarea
-                rows={4}
-                placeholder="e.g. Felt completely burned out this week, but taking it one hour at a time helped me get through..."
-                value={newPostText}
-                onChange={(e) => setNewPostText(e.target.value)}
-                required
-                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 12.5, outline: 'none', resize: 'none' }}
-              />
-
-              <button
-                type="submit"
-                style={{ background: C.primary, color: '#fff', padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
-              >
-                Post Anonymously
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ─── MODAL 2: SHARE CAMPUS WELLNESS TIP ─── */}
-      {tipModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(23,50,44,0.65)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 90,
-            padding: 16,
-          }}
-          onClick={() => setTipModalOpen(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#fff',
-              borderRadius: 20,
-              width: '100%',
-              maxWidth: 460,
-              padding: 20,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontWeight: 800, fontSize: 15, color: C.ink }}>Share a Campus Wellness Tip</div>
-              <button onClick={() => setTipModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
-            </div>
-
-            <form onSubmit={handleAddTip} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <form onSubmit={handlePostNote} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Category</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Topic Category</label>
                 <select
-                  value={newTipCategory}
-                  onChange={(e) => setNewTipCategory(e.target.value)}
+                  value={newNoteTag}
+                  onChange={(e) => setNewNoteTag(e.target.value)}
                   style={{ width: '100%', marginTop: 4, padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, background: '#fff' }}
                 >
-                  <option value="Outbreak Prevention">Outbreak Prevention & Hygiene</option>
-                  <option value="Community Support">Community Support & Buddy System</option>
-                  <option value="Eye Care & Study">Eye Care & Study Ergonomics</option>
-                  <option value="Sleep Hygiene">Sleep Hygiene & Nutrition</option>
+                  <option value="Academic Stress">Academic Stress & Exams</option>
+                  <option value="Hostel Life">Hostel Adjustment & Routine</option>
+                  <option value="Mindfulness">Self-Care & Mindfulness</option>
+                  <option value="Community Support">General Solidarity</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Tip Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Setting up hostel washroom sanitizers"
-                  value={newTipTitle}
-                  onChange={(e) => setNewTipTitle(e.target.value)}
-                  required
-                  style={{ width: '100%', marginTop: 4, padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5 }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Details / Explanation</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Your Message / Tip</label>
                 <textarea
-                  rows={3}
-                  placeholder="Explain how this tip helped you or your hostel peers..."
-                  value={newTipText}
-                  onChange={(e) => setNewTipText(e.target.value)}
+                  rows={4}
+                  placeholder="Write an encouraging reflection or practical tip for your fellow campus peers..."
+                  value={newNoteText}
+                  onChange={(e) => setNewNoteText(e.target.value)}
                   required
-                  style={{ width: '100%', marginTop: 4, padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, resize: 'none' }}
+                  style={{ width: '100%', marginTop: 4, padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, resize: 'none', outline: 'none' }}
                 />
               </div>
 
@@ -2382,7 +1671,7 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
                 type="submit"
                 style={{ background: C.primary, color: '#fff', padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', marginTop: 4 }}
               >
-                Post to Campus Peer Hub
+                Post Note
               </button>
             </form>
           </div>
