@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Home, Calendar, Pill, HeartPulse, HelpCircle, Bell, ShieldAlert, Sparkles, Stethoscope, LogOut, User, CreditCard, WifiOff, Globe } from 'lucide-react';
+import { Home, Calendar, Pill, HeartPulse, HelpCircle, Bell, ShieldAlert, Sparkles, Stethoscope, LogOut, User, CreditCard, WifiOff, Globe, ArrowLeft, ChevronLeft } from 'lucide-react';
 import { getUnreadCount } from '../api/index.js';
 import { useAuthStore, useUIStore } from '../store/store.js';
 import { socket } from '../socket/socket.js';
@@ -342,6 +342,46 @@ export default function AppShell() {
 
         {/* ─── Scrollable Page content ─── */}
         <div className="content-scroll">
+          {/* Universal Back Navigation Bar (Shows on non-root subpages) */}
+          {activePersona === 'student' && location.pathname !== '/' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
+              <button
+                onClick={() => navigate(-1)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: C.surface,
+                  border: `1.5px solid ${C.border}`,
+                  padding: '6px 14px',
+                  borderRadius: 10,
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  color: C.ink,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <ArrowLeft size={14} color={C.primary} />
+                <span>Back</span>
+              </button>
+
+              <div style={{ fontSize: 11.5, color: C.soft, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button
+                  onClick={() => navigate('/')}
+                  style={{ background: 'none', border: 'none', color: C.soft, cursor: 'pointer', padding: 0, fontWeight: 600 }}
+                >
+                  Home
+                </button>
+                <span>/</span>
+                <span style={{ color: C.primary, fontWeight: 700, textTransform: 'capitalize' }}>
+                  {location.pathname.replace('/', '').replace('-', ' ')}
+                </span>
+              </div>
+            </div>
+          )}
+
           {activePersona === 'doctor' ? (
             <DoctorPortal />
           ) : activePersona === 'pharmacist' ? (

@@ -4,7 +4,7 @@ import {
   HeartPulse, MessageSquare, Calendar, CheckSquare, Users, ShieldAlert,
   Sparkles, Send, Trash2, ArrowRight, CheckCircle2, Clock, Phone, AlertTriangle,
   Plus, X, ChevronRight, User, ThumbsUp, Flag, RefreshCw, Play, Pause, RotateCcw,
-  Check, CalendarCheck, ShieldCheck, MapPin, Search, Wind, Award
+  Check, CalendarCheck, ShieldCheck, MapPin, Search, Wind, Award, ArrowLeft
 } from 'lucide-react';
 import { useAuthStore } from '../store/store.js';
 
@@ -681,6 +681,37 @@ How can I help you best right now—organizing your day, trying the 4-7-8 breath
           );
         })}
       </div>
+
+      {/* ─── Sub-Tab Back to Dashboard Button ─── */}
+      {activeTab !== 'home' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button
+            onClick={() => setActiveTab('home')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              background: C.surface,
+              border: `1.5px solid ${C.border}`,
+              padding: '6px 14px',
+              borderRadius: 10,
+              fontSize: 12.5,
+              fontWeight: 700,
+              color: C.primary,
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <ArrowLeft size={14} />
+            <span>Back to Wellness Home</span>
+          </button>
+
+          <span style={{ fontSize: 11.5, color: C.soft }}>
+            Wellness / <strong style={{ color: C.ink }}>{NAV_ITEMS.find((n) => n.id === activeTab)?.label}</strong>
+          </span>
+        </div>
+      )}
 
       {/* ────────────────────────────────────────────────────────────────
           VIEW 1: WELLNESS HOME DASHBOARD
