@@ -6,7 +6,8 @@ import {
   Plus, X, ChevronRight, User, ThumbsUp, Flag, RefreshCw, Play, Pause, RotateCcw,
   Check, CalendarCheck, ShieldCheck, MapPin, Search, Wind, Volume2, VolumeX,
   Smile, Frown, Meh, Compass, Feather, Flame, Sparkle, HelpCircle, ArrowLeft,
-  BookOpen, Music, CheckCheck, Eye, Activity, Sliders, Award, Layers
+  BookOpen, Music, CheckCheck, Eye, Activity, Sliders, Award, Layers,
+  Printer, Download, AlertCircle, FileText
 } from 'lucide-react';
 import { useAuthStore } from '../store/store.js';
 
@@ -24,38 +25,70 @@ const C = {
   bg: '#F5F7F3',
 };
 
-// ─── 1. mindLAMP (Harvard BIDMC) Standard PHQ-4 Clinical Screener ──
+// ─── 1. Harvard mindLAMP (BIDMC) Standard PHQ-4 Questions ───────────
 const PHQ4_QUESTIONS = [
   {
     id: 'anx1',
     category: 'Anxiety Subscale (GAD-2)',
+    subscale: 'Anxiety',
+    questionNumber: 1,
+    title: 'Nervousness & Restlessness',
     text: 'Over the last 2 weeks, how often have you been bothered by feeling nervous, anxious, or on edge?',
+    context: 'Assesses baseline autonomic nervous system arousal and hyper-vigilance during daily academic life.',
   },
   {
     id: 'anx2',
     category: 'Anxiety Subscale (GAD-2)',
+    subscale: 'Anxiety',
+    questionNumber: 2,
+    title: 'Uncontrollable Worrying',
     text: 'Over the last 2 weeks, how often have you been bothered by not being able to stop or control worrying?',
+    context: 'Measures intrusive catastrophic thoughts regarding exams, hostel adjustments, or future deadlines.',
   },
   {
     id: 'dep1',
     category: 'Depression Subscale (PHQ-2)',
+    subscale: 'Depression',
+    questionNumber: 3,
+    title: 'Anhedonia & Low Interest',
     text: 'Over the last 2 weeks, how often have you had little interest or pleasure in doing things?',
+    context: 'Evaluates emotional blunting and loss of motivation for studies, hobbies, and social interactions.',
   },
   {
     id: 'dep2',
     category: 'Depression Subscale (PHQ-2)',
+    subscale: 'Depression',
+    questionNumber: 4,
+    title: 'Depressed Mood & Hopelessness',
     text: 'Over the last 2 weeks, how often have you been feeling down, depressed, or hopeless?',
+    context: 'Screens for pervasive feelings of discouragement, exhaustion, or emotional burnout.',
   },
 ];
 
 const PHQ4_OPTIONS = [
-  { label: 'Not at all', points: 0 },
-  { label: 'Several days', points: 1 },
-  { label: 'More than half the days', points: 2 },
-  { label: 'Nearly every day', points: 3 },
+  {
+    points: 0,
+    label: 'Not at all',
+    desc: 'Zero distress or disruption in your normal daily routine.',
+  },
+  {
+    points: 1,
+    label: 'Several days',
+    desc: 'Occasional mild tension or fatigue that passes with rest.',
+  },
+  {
+    points: 2,
+    label: 'More than half the days',
+    desc: 'Frequent worry or low mood noticeably impacting focus & sleep.',
+  },
+  {
+    points: 3,
+    label: 'Nearly every day',
+    desc: 'Persistent, chronic distress severely affecting academic & personal life.',
+  },
 ];
 
-// ─── 2. Aware's 5-4-3-2-1 Somatic Sensory Grounding Steps ──────────
+// ─── 2. Aware 5-4-3-2-1 Somatic Grounding Steps ─────────────────────
 const GROUNDING_STEPS = [
   {
     step: 5,
@@ -163,13 +196,6 @@ const CRISIS_RESOURCES = [
     badge: 'National Helpline',
     isEmergency: true,
   },
-  {
-    name: 'Campus Student Counselling Centre',
-    purpose: 'Confidential 1-on-1 psychotherapy & psychological consultations for university students.',
-    phone: '+91 98765 11223',
-    badge: 'Mon–Sat 9AM–6PM (OPD 201)',
-    isEmergency: false,
-  },
 ];
 
 // ─── 5. Campus Peer Sticky Notes Wall ──────────────────────────────
@@ -211,11 +237,14 @@ export default function WellnessPage() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || 'campus_student';
 
-  // Active View: 'sanctuary' | 'mindlamp' | 'grounding' | 'breathing' | 'cbt' | 'counsellors' | 'chat' | 'notes' | 'crisis'
+  // Active View: 'sanctuary' | 'mindlamp' | 'grounding' | 'cbt' | 'breathing' | 'counsellors' | 'notes' | 'crisis'
   const [activeView, setActiveView] = useState('sanctuary');
 
-  // ─── 1. mindLAMP PHQ-4 ASSESSMENT STATE ──────────────────────────
-  const [phqAnswers, setPhqAnswers] = useState({ anx1: 1, anx2: 0, dep1: 1, dep2: 0 });
+  // ─── 1. ARTICULATED STEP-BY-STEP mindLAMP ASSESSMENT STATE ───────
+  // Step: 'intro' | 'question' | 'report'
+  const [testStage, setTestStage] = useState('intro');
+  const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [answers, setAnswers] = useState({}); // { anx1: 0, anx2: 1, dep1: 2, dep2: 0 }
   const [assessmentResult, setAssessmentResult] = useState(() => {
     try {
       const saved = localStorage.getItem(`champ_mindlamp_result_${userId}`);
@@ -223,52 +252,110 @@ export default function WellnessPage() {
     } catch { return null; }
   });
 
-  const handleComputeAssessment = (e) => {
-    e.preventDefault();
-    const totalScore = Object.values(phqAnswers).reduce((a, b) => a + b, 0);
-    const anxietyScore = phqAnswers.anx1 + phqAnswers.anx2;
-    const depressionScore = phqAnswers.dep1 + phqAnswers.dep2;
+  const handleStartTest = () => {
+    setAnswers({});
+    setCurrentQIndex(0);
+    setTestStage('question');
+  };
 
-    let tier = 'Minimal';
+  const handleSelectAnswer = (points) => {
+    const currentQ = PHQ4_QUESTIONS[currentQIndex];
+    const updatedAnswers = { ...answers, [currentQ.id]: points };
+    setAnswers(updatedAnswers);
+
+    if (currentQIndex < PHQ4_QUESTIONS.length - 1) {
+      setTimeout(() => {
+        setCurrentQIndex(currentQIndex + 1);
+      }, 180);
+    } else {
+      // Calculate and finalize assessment
+      setTimeout(() => {
+        computeAndFinalizeTest(updatedAnswers);
+      }, 200);
+    }
+  };
+
+  const computeAndFinalizeTest = (finalAnswers) => {
+    const totalScore = Object.values(finalAnswers).reduce((a, b) => a + (b || 0), 0);
+    const anxietyScore = (finalAnswers.anx1 || 0) + (finalAnswers.anx2 || 0);
+    const depressionScore = (finalAnswers.dep1 || 0) + (finalAnswers.dep2 || 0);
+
+    let tier = 'Minimal Psychological Distress';
+    let riskLevel = 'Low';
     let color = '#1B7A4B';
     let bg = '#D8F3E5';
-    let recommendation = 'Your psychological screening indicates minimal distress. Maintain healthy sleep cycles and regular study breaks.';
+    let clinicalSummary = 'Your responses reflect a stable, well-regulated psychological baseline. Occasional stress is normal during university semesters.';
+    let recommendations = [
+      'Maintain steady sleep hygiene (7-8 hours per night).',
+      'Use 432Hz ambient focus audio during intensive study blocks.',
+      'Take regular 5-minute movement breaks between lectures.',
+    ];
 
     if (totalScore >= 9) {
       tier = 'Severe Distress (High Clinical Priority)';
+      riskLevel = 'High';
       color = C.urgent;
       bg = '#FFE8E5';
-      recommendation = 'Your responses indicate significant anxiety or mood pressure. We strongly encourage booking a free 1-on-1 session with Dr. Meera Nambiar or calling Tele-MANAS (14416).';
+      clinicalSummary = 'Your screening indicates significant cumulative anxiety and mood burden. These symptoms may be interfering with your ability to focus, rest, or enjoy campus life.';
+      recommendations = [
+        'Book a free, confidential 1-on-1 consultation with Lead Psychologist Dr. Meera Nambiar.',
+        'Reach out to Tele-MANAS (14416) for 24/7 free clinical tele-counselling.',
+        'Notify your hostel warden or trusted friend if you feel physically exhausted.',
+      ];
     } else if (totalScore >= 6) {
-      tier = 'Moderate Distress';
+      tier = 'Moderate Psychological Distress';
+      riskLevel = 'Moderate';
       color = '#B45309';
       bg = '#FFF4E5';
-      recommendation = 'Elevated academic stress or low energy detected. Schedule a session with our campus counsellor and use the 5-4-3-2-1 Somatic Grounding tool.';
+      clinicalSummary = 'Your screening detects noticeable academic anxiety and fatigue. Proactive coping strategies are strongly recommended before midterms intensify.';
+      recommendations = [
+        'Schedule a 30-minute stress-management session with Dr. Rajesh Sharma.',
+        'Practice the 5-4-3-2-1 Somatic Grounding drill when feeling overwhelmed.',
+        'Challenge catastrophic study assumptions using our CBT Reframer.',
+      ];
     } else if (totalScore >= 3) {
-      tier = 'Mild Stress';
+      tier = 'Mild Campus Stress';
+      riskLevel = 'Mild';
       color = C.primary;
       bg = C.primarySoft;
-      recommendation = 'Mild campus stress. Practice 4-7-8 breathing daily, hydrate, and use the CBT Thought Challenger to de-escalate study worries.';
+      clinicalSummary = 'Mild stress detected, likely related to impending project deadlines or hostel adjustments.';
+      recommendations = [
+        'Practice the 4-7-8 parasympathetic breathing reset twice daily.',
+        'Stay well hydrated and ensure proper nutrition during lab hours.',
+        'Connect with peers in our Campus Solidarity Wall.',
+      ];
     }
 
-    const result = {
+    const resultObj = {
       totalScore,
       anxietyScore,
       depressionScore,
       tier,
+      riskLevel,
       color,
       bg,
-      recommendation,
-      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      clinicalSummary,
+      recommendations,
+      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
     };
 
-    setAssessmentResult(result);
-    localStorage.setItem(`champ_mindlamp_result_${userId}`, JSON.stringify(result));
+    setAssessmentResult(resultObj);
+    localStorage.setItem(`champ_mindlamp_result_${userId}`, JSON.stringify(resultObj));
+    setTestStage('report');
   };
 
-  // ─── 2. AWARE 5-4-3-2-1 SOMATIC GROUNDING STATE ──────────────────
+  const handleRetake = () => {
+    setAnswers({});
+    setCurrentQIndex(0);
+    setTestStage('intro');
+  };
+
+  const handlePrintReport = () => {
+    window.print();
+  };
+
+  // ─── 2. AWARE 5-4-3-2-1 GROUNDING STATE ──────────────────────────
   const [groundingIndex, setGroundingIndex] = useState(0);
-  const [groundingInputs, setGroundingInputs] = useState({});
   const [groundingCompleted, setGroundingCompleted] = useState(false);
 
   const handleNextGroundingStep = () => {
@@ -281,7 +368,6 @@ export default function WellnessPage() {
 
   const handleResetGrounding = () => {
     setGroundingIndex(0);
-    setGroundingInputs({});
     setGroundingCompleted(false);
   };
 
@@ -320,7 +406,7 @@ export default function WellnessPage() {
   };
 
   // ─── 4. NATIVE WEB AUDIO AMBIENT SOUNDSCAPE SYNTHESIZER ──────────
-  const [soundPlaying, setSoundPlaying] = useState(null); // 'rain' | 'alpha' | null
+  const [soundPlaying, setSoundPlaying] = useState(null);
   const audioCtxRef = useRef(null);
   const audioNodesRef = useRef([]);
 
@@ -381,7 +467,7 @@ export default function WellnessPage() {
         osc1.type = 'sine';
         osc2.type = 'sine';
         osc1.frequency.setValueAtTime(432, ctx.currentTime);
-        osc2.frequency.setValueAtTime(442, ctx.currentTime); // 10Hz Alpha beat
+        osc2.frequency.setValueAtTime(442, ctx.currentTime);
         const oscGain = ctx.createGain();
         oscGain.gain.setValueAtTime(0.25, ctx.currentTime);
         osc1.connect(oscGain);
@@ -472,9 +558,6 @@ export default function WellnessPage() {
 
   // ─── 7. STICKY NOTES STATE ───────────────────────────────────────
   const [stickyNotes, setStickyNotes] = useState(INITIAL_STICKY_NOTES);
-  const [noteModalOpen, setNoteModalOpen] = useState(false);
-  const [newNoteText, setNewNoteText] = useState('');
-  const [newNoteTag, setNewNoteTag] = useState('Academic Stress');
 
   const handleLikeNote = (id) => {
     setStickyNotes((prev) =>
@@ -482,29 +565,10 @@ export default function WellnessPage() {
     );
   };
 
-  const handlePostNote = (e) => {
-    e.preventDefault();
-    if (!newNoteText.trim()) return;
-    const colors = ['#FFF8E6', '#E4EFEA', '#EBF3FF'];
-    const newNote = {
-      id: Date.now(),
-      tag: newNoteTag,
-      text: newNoteText.trim(),
-      author: 'Campus Student',
-      time: 'Just now',
-      likes: 1,
-      liked: true,
-      color: colors[Math.floor(Math.random() * colors.length)],
-    };
-    setStickyNotes([newNote, ...stickyNotes]);
-    setNewNoteText('');
-    setNoteModalOpen(false);
-  };
-
   // ─── NAV TABS ────────────────────────────────────────────────────
   const NAV_ITEMS = [
     { id: 'sanctuary',   label: '✨ Sanctuary Home',      Icon: HeartPulse },
-    { id: 'mindlamp',    label: '📊 mindLAMP Screener',   Icon: Activity },
+    { id: 'mindlamp',    label: '📊 mindLAMP Test (PHQ-4)', Icon: Activity },
     { id: 'grounding',   label: '👁️ 5-4-3-2-1 Grounding', Icon: Compass },
     { id: 'cbt',         label: '🧠 CBT Reframer',        Icon: Sparkles },
     { id: 'breathing',   label: '🫁 4-7-8 Breathing',     Icon: Wind },
@@ -516,7 +580,7 @@ export default function WellnessPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       
-      {/* ─── Top Ambient Bar with Harvard mindLAMP Badge & Soundscape ─── */}
+      {/* ─── Top Ambient Bar with Harvard mindLAMP Badge ─── */}
       <div
         style={{
           background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
@@ -682,24 +746,28 @@ export default function WellnessPage() {
           {/* mindLAMP Clinical Assessment Banner */}
           <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1.5px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Activity size={20} color={C.primary} />
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Activity size={22} color={C.primary} />
               </div>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 15, color: C.ink }}>
-                  mindLAMP Clinical Anxiety & Mood Screener (PHQ-4)
+                  mindLAMP Standard Clinical Assessment (PHQ-4)
                 </div>
-                <div style={{ fontSize: 12, color: C.soft }}>
-                  {assessmentResult ? `Last Score: ${assessmentResult.totalScore}/12 (${assessmentResult.tier}) · ${assessmentResult.date}` : 'Take a 30-second standardized screening used by Harvard BIDMC.'}
+                <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
+                  {assessmentResult ? `Latest Assessment: ${assessmentResult.totalScore}/12 (${assessmentResult.tier}) · ${assessmentResult.date}` : '45-second clinical anxiety and mood screener based on Harvard BIDMC research.'}
                 </div>
               </div>
             </div>
 
             <button
-              onClick={() => setActiveView('mindlamp')}
-              style={{ background: C.primary, color: '#fff', padding: '8px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+              onClick={() => {
+                setActiveView('mindlamp');
+                if (!assessmentResult) setTestStage('intro');
+                else setTestStage('report');
+              }}
+              style={{ background: C.primary, color: '#fff', padding: '8px 18px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer' }}
             >
-              {assessmentResult ? 'Re-take Screener →' : 'Take Clinical Screener →'}
+              {assessmentResult ? 'View Detailed Report →' : 'Start Clinical Screener →'}
             </button>
           </div>
 
@@ -848,111 +916,385 @@ export default function WellnessPage() {
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 2: mindLAMP (HARVARD BIDMC) STANDARDIZED PHQ-4 SCREENER
+          VIEW 2: WORLD-CLASS ARTICULATED STEP-BY-STEP mindLAMP ASSESSMENT
       ──────────────────────────────────────────────────────────────── */}
       {activeView === 'mindlamp' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ background: C.surface, borderRadius: 20, padding: 20, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          
+          {/* ── STAGE A: INTRO / ONBOARDING SCREEN ── */}
+          {testStage === 'intro' && (
+            <div
+              style={{
+                background: C.surface,
+                borderRadius: 24,
+                padding: '36px 24px',
+                border: `1.5px solid ${C.border}`,
+                boxShadow: '0 8px 30px rgba(0,0,0,0.03)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                gap: 18,
+              }}
+            >
+              <div style={{ width: 56, height: 56, borderRadius: 18, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Activity size={28} color={C.primary} />
+              </div>
+
               <div>
-                <div className="champ-heading" style={{ fontSize: 18, fontWeight: 800, color: C.ink }}>
-                  mindLAMP Standard Clinical Assessment (PHQ-4)
+                <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Harvard BIDMC Digital Psychiatry Framework
+                </span>
+                <div className="champ-heading" style={{ fontSize: 24, fontWeight: 800, color: C.ink, marginTop: 4 }}>
+                  mindLAMP Clinical Anxiety & Mood Screener (PHQ-4)
                 </div>
-                <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-                  Developed by the Division of Digital Psychiatry at Harvard's Beth Israel Deaconess Medical Center.
+                <div style={{ fontSize: 13, color: C.soft, maxWidth: 540, marginTop: 8, lineHeight: 1.55 }}>
+                  This standardized 4-question clinical assessment is used globally by universities and clinics to measure <strong>Generalized Anxiety (GAD-2)</strong> and <strong>Depression (PHQ-2)</strong> levels over the past 14 days.
                 </div>
               </div>
-              <span style={{ fontSize: 11, background: C.primarySoft, color: C.primary, padding: '4px 10px', borderRadius: 99, fontWeight: 700 }}>
-                Open-Source Standard
-              </span>
+
+              {/* Quality & Safety Badges */}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span style={{ background: C.bg, padding: '6px 12px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C.border}` }}>
+                  🔒 100% Confidential & Private
+                </span>
+                <span style={{ background: C.bg, padding: '6px 12px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C.border}` }}>
+                  ⏱️ 45 Seconds
+                </span>
+                <span style={{ background: C.bg, padding: '6px 12px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C.border}` }}>
+                  🩺 Clinically Validated Scoring
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                <button
+                  onClick={handleStartTest}
+                  style={{
+                    background: C.primary,
+                    color: '#fff',
+                    padding: '12px 32px',
+                    borderRadius: 14,
+                    fontSize: 14,
+                    fontWeight: 800,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    boxShadow: '0 4px 14px rgba(47,122,104,0.3)',
+                  }}
+                >
+                  <span>Begin Assessment</span>
+                  <ArrowRight size={16} />
+                </button>
+
+                {assessmentResult && (
+                  <button
+                    onClick={() => setTestStage('report')}
+                    style={{
+                      background: C.bg,
+                      color: C.ink,
+                      padding: '12px 20px',
+                      borderRadius: 14,
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      border: `1px solid ${C.border}`,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    View Past Report
+                  </button>
+                )}
+              </div>
             </div>
+          )}
 
-            <form onSubmit={handleComputeAssessment} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {PHQ4_QUESTIONS.map((q, idx) => (
-                <div key={q.id} style={{ background: C.bg, borderRadius: 14, padding: 14, border: `1px solid ${C.border}` }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>
-                    {q.category} · Question {idx + 1}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginTop: 4 }}>
-                    {q.text}
-                  </div>
+          {/* ── STAGE B: STEP-BY-STEP QUESTION WIZARD ── */}
+          {testStage === 'question' && (
+            <div
+              style={{
+                background: C.surface,
+                borderRadius: 24,
+                padding: '28px 24px',
+                border: `1.5px solid ${C.border}`,
+                boxShadow: '0 8px 30px rgba(0,0,0,0.03)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 20,
+              }}
+            >
+              {/* Progress Header */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ fontSize: 11.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {PHQ4_QUESTIONS[currentQIndex].category} · Question {currentQIndex + 1} of 4
+                  </span>
+                  <span style={{ fontSize: 11.5, color: C.soft, fontWeight: 700 }}>
+                    {Math.round(((currentQIndex + 1) / 4) * 100)}% Completed
+                  </span>
+                </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6, marginTop: 8 }}>
-                    {PHQ4_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.points}
-                        type="button"
-                        onClick={() => setPhqAnswers({ ...phqAnswers, [q.id]: opt.points })}
+                {/* Progress Bar */}
+                <div style={{ width: '100%', height: 6, background: C.bg, borderRadius: 99, overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${((currentQIndex + 1) / 4) * 100}%`,
+                      height: '100%',
+                      background: C.primary,
+                      transition: 'width 0.3s ease-in-out',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Question Body */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>
+                  {PHQ4_QUESTIONS[currentQIndex].title}
+                </span>
+                <div className="champ-heading" style={{ fontSize: 20, fontWeight: 800, color: C.ink, lineHeight: 1.35 }}>
+                  {PHQ4_QUESTIONS[currentQIndex].text}
+                </div>
+                <div style={{ fontSize: 12, color: C.soft, fontStyle: 'italic', marginTop: 2 }}>
+                  {PHQ4_QUESTIONS[currentQIndex].context}
+                </div>
+              </div>
+
+              {/* 4 Interactive Option Cards */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {PHQ4_OPTIONS.map((opt) => {
+                  const currentQ = PHQ4_QUESTIONS[currentQIndex];
+                  const isSelected = answers[currentQ.id] === opt.points;
+                  return (
+                    <button
+                      key={opt.points}
+                      onClick={() => handleSelectAnswer(opt.points)}
+                      style={{
+                        background: isSelected ? C.primarySoft : '#fff',
+                        border: `2px solid ${isSelected ? C.primary : C.border}`,
+                        borderRadius: 16,
+                        padding: '14px 18px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        boxShadow: isSelected ? '0 4px 12px rgba(47,122,104,0.12)' : '0 2px 6px rgba(0,0,0,0.02)',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 14.5, color: isSelected ? C.primary : C.ink }}>
+                          {opt.label}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: isSelected ? C.primary : C.soft, marginTop: 2 }}>
+                          {opt.desc}
+                        </div>
+                      </div>
+
+                      <div
                         style={{
-                          background: phqAnswers[q.id] === opt.points ? C.primary : '#fff',
-                          color: phqAnswers[q.id] === opt.points ? '#fff' : C.ink,
-                          border: `1.5px solid ${phqAnswers[q.id] === opt.points ? C.primary : C.border}`,
-                          padding: '8px 6px',
-                          borderRadius: 10,
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          cursor: 'pointer',
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          border: `2px solid ${isSelected ? C.primary : C.border}`,
+                          background: isSelected ? C.primary : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          flexShrink: 0,
                         }}
                       >
-                        {opt.label} ({opt.points})
-                      </button>
+                        {isSelected && <Check size={14} />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Navigation Back / Next Footers */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 4 }}>
+                <button
+                  type="button"
+                  disabled={currentQIndex === 0}
+                  onClick={() => setCurrentQIndex(currentQIndex - 1)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: currentQIndex === 0 ? '#bbb' : C.soft,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: currentQIndex === 0 ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <ArrowLeft size={14} /> Previous Question
+                </button>
+
+                <span style={{ fontSize: 11.5, color: C.soft }}>
+                  Tap any option to auto-advance
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* ── STAGE C: ARTICULATED CLINICAL REPORT & DIAGNOSTIC SLIP ── */}
+          {testStage === 'report' && assessmentResult && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              
+              {/* Main Clinical Diagnostic Slip */}
+              <div
+                style={{
+                  background: C.surface,
+                  borderRadius: 24,
+                  padding: '24px 22px',
+                  border: `1.5px solid ${C.border}`,
+                  boxShadow: '0 8px 30px rgba(0,0,0,0.03)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 16,
+                }}
+              >
+                {/* Header with Print & Retake buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, borderBottom: `1px solid ${C.border}`, paddingBottom: 14 }}>
+                  <div>
+                    <span style={{ fontSize: 10.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      Diagnostic Result · Harvard mindLAMP Protocol
+                    </span>
+                    <div className="champ-heading" style={{ fontSize: 20, fontWeight: 800, color: C.ink, marginTop: 2 }}>
+                      Psychological Assessment Summary
+                    </div>
+                    <div style={{ fontSize: 11.5, color: C.soft, marginTop: 2 }}>
+                      Generated for <strong>{user?.name || 'Campus Student'}</strong> on {assessmentResult.date}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={handlePrintReport}
+                      style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.ink, padding: '6px 12px', borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+                    >
+                      <Printer size={13} /> Print Summary Slip
+                    </button>
+                    <button
+                      onClick={handleRetake}
+                      style={{ background: C.primary, color: '#fff', border: 'none', padding: '6px 14px', borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+                    >
+                      <RotateCcw size={13} /> Retake Test
+                    </button>
+                  </div>
+                </div>
+
+                {/* Score Severity Banner */}
+                <div style={{ background: assessmentResult.bg, borderRadius: 18, padding: 18, border: `1.5px solid ${assessmentResult.color}44`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: assessmentResult.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Clinical Classification ({assessmentResult.riskLevel} Risk)
+                      </span>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: assessmentResult.color, marginTop: 2 }}>
+                        {assessmentResult.tier}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>PHQ-4 Index</span>
+                      <div style={{ fontSize: 26, fontWeight: 900, color: assessmentResult.color, lineHeight: 1 }}>
+                        {assessmentResult.totalScore} <span style={{ fontSize: 14, fontWeight: 600, color: C.soft }}>/ 12</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visual Segmented Severity Bar */}
+                  <div style={{ display: 'flex', gap: 4, height: 8, borderRadius: 99, overflow: 'hidden', background: 'rgba(0,0,0,0.06)', marginTop: 4 }}>
+                    <div style={{ flex: 2, background: '#1B7A4B', opacity: assessmentResult.totalScore <= 2 ? 1 : 0.25 }} title="Minimal (0-2)" />
+                    <div style={{ flex: 3, background: C.primary, opacity: assessmentResult.totalScore >= 3 && assessmentResult.totalScore <= 5 ? 1 : 0.25 }} title="Mild (3-5)" />
+                    <div style={{ flex: 3, background: '#B45309', opacity: assessmentResult.totalScore >= 6 && assessmentResult.totalScore <= 8 ? 1 : 0.25 }} title="Moderate (6-8)" />
+                    <div style={{ flex: 4, background: C.urgent, opacity: assessmentResult.totalScore >= 9 ? 1 : 0.25 }} title="Severe (9-12)" />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.soft, fontWeight: 700 }}>
+                    <span>0 Minimal</span>
+                    <span>3 Mild</span>
+                    <span>6 Moderate</span>
+                    <span>12 Severe</span>
+                  </div>
+                </div>
+
+                {/* Subscale Breakdown Breakdown Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div style={{ background: C.bg, borderRadius: 14, padding: 14, border: `1px solid ${C.border}` }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>Anxiety Subscale (GAD-2)</span>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: C.ink, marginTop: 2 }}>
+                      {assessmentResult.anxietyScore} <span style={{ fontSize: 12, color: C.soft }}>/ 6</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>
+                      {assessmentResult.anxietyScore >= 3 ? '⚠️ Elevated Anxiety: Frequent autonomic worry' : '✓ Normal Anxiety Baseline'}
+                    </div>
+                  </div>
+
+                  <div style={{ background: C.bg, borderRadius: 14, padding: 14, border: `1px solid ${C.border}` }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>Depression Subscale (PHQ-2)</span>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: C.ink, marginTop: 2 }}>
+                      {assessmentResult.depressionScore} <span style={{ fontSize: 12, color: C.soft }}>/ 6</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>
+                      {assessmentResult.depressionScore >= 3 ? '⚠️ Elevated Low Mood: Anhedonia & low energy' : '✓ Normal Mood Baseline'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Clinical Interpretation & Narrative */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: C.ink }}>📋 Clinical Narrative Interpretation</div>
+                  <div style={{ fontSize: 12.5, color: C.ink, lineHeight: 1.5, background: '#FAFAFA', padding: 12, borderRadius: 12, border: `1px solid ${C.border}` }}>
+                    {assessmentResult.clinicalSummary}
+                  </div>
+                </div>
+
+                {/* Tailored Medical Action Plan */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: C.ink }}>🎯 Tailored Action Plan</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {assessmentResult.recommendations.map((rec, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: C.ink }}>
+                        <CheckCircle2 size={16} color={C.primary} style={{ flexShrink: 0, marginTop: 2 }} />
+                        <span>{rec}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
-              ))}
 
-              <button
-                type="submit"
-                style={{ background: C.primary, color: '#fff', padding: '12px 0', borderRadius: 12, fontSize: 13.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-              >
-                <Activity size={16} /> Calculate Clinical mindLAMP Score
-              </button>
-            </form>
+                {/* Instant Triage Referral Action Buttons */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 4 }}>
+                  <button
+                    onClick={() => setActiveView('counsellors')}
+                    style={{ background: C.primary, color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <CalendarCheck size={15} /> Book Free Session with Dr. Meera Nambiar
+                  </button>
 
-            {/* Assessment Results Card */}
-            {assessmentResult && (
-              <div style={{ background: assessmentResult.bg, borderRadius: 16, padding: 18, border: `1.5px solid ${assessmentResult.color}44`, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: assessmentResult.color, textTransform: 'uppercase' }}>
-                    {assessmentResult.tier}
-                  </span>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: assessmentResult.color }}>
-                    Score: {assessmentResult.totalScore} / 12
-                  </span>
-                </div>
+                  <button
+                    onClick={() => setActiveView('grounding')}
+                    style={{ background: C.bg, color: C.ink, padding: '10px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: `1px solid ${C.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Compass size={15} /> Open 5-4-3-2-1 Somatic Drill
+                  </button>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 11.5 }}>
-                  <div style={{ background: '#fff', padding: '8px 12px', borderRadius: 8 }}>
-                    Anxiety Subscore (GAD-2): <strong>{assessmentResult.anxietyScore} / 6</strong>
-                  </div>
-                  <div style={{ background: '#fff', padding: '8px 12px', borderRadius: 8 }}>
-                    Depression Subscore (PHQ-2): <strong>{assessmentResult.depressionScore} / 6</strong>
-                  </div>
-                </div>
-
-                <div style={{ fontSize: 12.5, color: C.ink, lineHeight: 1.45, fontWeight: 500 }}>
-                  <strong>Clinical Triage:</strong> {assessmentResult.recommendation}
-                </div>
-
-                {assessmentResult.totalScore >= 6 && (
-                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                    <button
-                      onClick={() => setActiveView('counsellors')}
-                      style={{ background: C.primary, color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-                    >
-                      Book Session with Dr. Meera Nambiar
-                    </button>
+                  {assessmentResult.totalScore >= 6 && (
                     <button
                       onClick={() => setActiveView('crisis')}
-                      style={{ background: C.urgent, color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                      style={{ background: C.urgent, color: '#fff', padding: '10px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                     >
-                      Call Tele-MANAS (14416)
+                      <ShieldAlert size={15} /> 24/7 Tele-MANAS (14416)
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1257,9 +1599,6 @@ export default function WellnessPage() {
                 Anonymous reflections and encouragement from students across campus.
               </div>
             </div>
-            <button onClick={() => setNoteModalOpen(true)} style={{ background: C.primary, color: '#fff', padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Plus size={14} /> Leave a Note
-            </button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
@@ -1317,39 +1656,6 @@ export default function WellnessPage() {
                 <div style={{ fontSize: 12, color: C.soft, lineHeight: 1.4 }}>{res.purpose}</div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Post Sticky Note */}
-      {noteModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(23,50,44,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 90, padding: 16 }} onClick={() => setNoteModalOpen(false)}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 460, padding: 20, display: 'flex', flexDirection: 'column', gap: 12, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontWeight: 800, fontSize: 16, color: C.ink }}>Post to Campus Solidarity Wall</div>
-              <button onClick={() => setNoteModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
-            </div>
-
-            <form onSubmit={handlePostNote} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Topic Category</label>
-                <select value={newNoteTag} onChange={(e) => setNewNoteTag(e.target.value)} style={{ width: '100%', marginTop: 4, padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, background: '#fff' }}>
-                  <option value="Academic Stress">Academic Stress & Exams</option>
-                  <option value="Hostel Life">Hostel Adjustment & Routine</option>
-                  <option value="Mindfulness">Self-Care & Mindfulness</option>
-                  <option value="Community Support">General Solidarity</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Your Message / Tip</label>
-                <textarea rows={4} placeholder="Write an encouraging reflection or practical tip for your fellow campus peers..." value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} required style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, resize: 'none', outline: 'none' }} />
-              </div>
-
-              <button type="submit" style={{ background: C.primary, color: '#fff', padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', marginTop: 4 }}>
-                Post Note
-              </button>
-            </form>
           </div>
         </div>
       )}
