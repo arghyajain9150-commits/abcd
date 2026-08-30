@@ -86,68 +86,148 @@ const COGNITIVE_DISTORTIONS = [
   },
 ];
 
-// ─── 1. Harvard mindLAMP (BIDMC) Standard PHQ-4 Questions ───────────
-const PHQ4_QUESTIONS = [
-  {
-    id: 'anx1',
-    category: 'Anxiety Subscale (GAD-2)',
-    subscale: 'Anxiety',
-    questionNumber: 1,
-    title: 'Nervousness & Restlessness',
-    text: 'Over the last 2 weeks, how often have you been bothered by feeling nervous, anxious, or on edge?',
-    context: 'Assesses baseline autonomic nervous system arousal and hyper-vigilance during daily academic life.',
+// ─── 1. Harvard mindLAMP Digital Psychiatry Standard Clinical Battery ──
+const MINDLAMP_BATTERY = {
+  phq4: {
+    id: 'phq4',
+    name: 'PHQ-4 Ultra-Brief Screener',
+    badge: '4 Questions · 45s',
+    tagline: 'Generalized Anxiety (GAD-2) & Depression (PHQ-2)',
+    category: 'Rapid Dual-Screener',
+    citation: 'Kroenke, Spitzer, Williams, Löwe (2009) / Harvard BIDMC mindLAMP',
+    maxScore: 12,
+    icon: '⚡',
+    timeEstimate: '45 Seconds',
+    description: 'An ultra-rapid 4-item standardized screener measuring baseline autonomic anxiety and depressive blunting over the past 14 days.',
+    options: [
+      { points: 0, label: 'Not at all', desc: 'Zero distress in your daily academic routine.' },
+      { points: 1, label: 'Several days', desc: 'Occasional mild tension that passes with rest.' },
+      { points: 2, label: 'More than half the days', desc: 'Noticeably impacting focus, appetite, or sleep.' },
+      { points: 3, label: 'Nearly every day', desc: 'Persistent disruption in daily university life.' },
+    ],
+    questions: [
+      { id: 'anx1', subscale: 'Anxiety (GAD-2)', title: 'Nervousness & Restlessness', text: 'Over the last 2 weeks, how often have you been feeling nervous, anxious, or on edge?', context: 'Assesses autonomic hyper-vigilance and acute sympathetic nervous system arousal.' },
+      { id: 'anx2', subscale: 'Anxiety (GAD-2)', title: 'Uncontrollable Worrying', text: 'Over the last 2 weeks, how often have you been unable to stop or control worrying?', context: 'Measures intrusive catastrophic loops regarding exams, hostel life, or future.' },
+      { id: 'dep1', subscale: 'Depression (PHQ-2)', title: 'Anhedonia & Loss of Pleasure', text: 'Over the last 2 weeks, how often have you had little interest or pleasure in doing things?', context: 'Evaluates emotional blunting and loss of motivation for studies and social life.' },
+      { id: 'dep2', subscale: 'Depression (PHQ-2)', title: 'Depressed Mood & Hopelessness', text: 'Over the last 2 weeks, how often have you been feeling down, depressed, or hopeless?', context: 'Screens for pervasive fatigue, despair, or emotional burnout.' },
+    ],
   },
-  {
-    id: 'anx2',
-    category: 'Anxiety Subscale (GAD-2)',
-    subscale: 'Anxiety',
-    questionNumber: 2,
-    title: 'Uncontrollable Worrying',
-    text: 'Over the last 2 weeks, how often have you been bothered by not being able to stop or control worrying?',
-    context: 'Measures intrusive catastrophic thoughts regarding exams, hostel adjustments, or future deadlines.',
+  gad7: {
+    id: 'gad7',
+    name: 'GAD-7 Generalized Anxiety Scale',
+    badge: '7 Questions · 2 min',
+    tagline: 'Academic & Generalized Anxiety Diagnostic Scale',
+    category: 'Anxiety Benchmark',
+    citation: 'Spitzer, Kroenke, Williams, Löwe (2006) / Harvard mindLAMP',
+    maxScore: 21,
+    icon: '📊',
+    timeEstimate: '2 Minutes',
+    description: 'The global clinical benchmark for evaluating generalized anxiety, panic symptoms, muscle tension, and cognitive worry in university students.',
+    options: [
+      { points: 0, label: 'Not at all', desc: 'No symptoms experienced in past 14 days.' },
+      { points: 1, label: 'Several days', desc: 'Occasional worry or mild nervousness.' },
+      { points: 2, label: 'More than half the days', desc: 'Frequent tension interfering with lectures and study.' },
+      { points: 3, label: 'Nearly every day', desc: 'Debilitating, uncontrollable anxiety throughout the day.' },
+    ],
+    questions: [
+      { id: 'g1', subscale: 'Hyper-arousal', title: 'Feeling Nervous or On Edge', text: 'Feeling nervous, anxious, or on edge?', context: 'Evaluates baseline sympathetic nervous system arousal.' },
+      { id: 'g2', subscale: 'Cognitive Control', title: 'Inability to Stop Worrying', text: 'Not being able to stop or control worrying?', context: 'Measures intrusive mental loops and academic rumination.' },
+      { id: 'g3', subscale: 'Generalized Worry', title: 'Worrying Across Multiple Areas', text: 'Worrying too much about different things (grades, placements, relationships)?', context: 'Screens for generalized chronic anxiety across domains.' },
+      { id: 'g4', subscale: 'Somatic Tension', title: 'Trouble Relaxing', text: 'Trouble relaxing, sitting still, or unwinding in the evening?', context: 'Measures physiological inability to achieve parasympathetic rest.' },
+      { id: 'g5', subscale: 'Motor Agitation', title: 'Restlessness', text: 'Being so restless that it is hard to sit still during lectures or study?', context: 'Assesses psychomotor agitation and physical fidgeting.' },
+      { id: 'g6', subscale: 'Affective Irritability', title: 'Irritability & Short Temper', text: 'Becoming easily annoyed, irritable, or short-tempered with peers or professors?', context: 'Detects emotional exhaustion manifesting as low patience.' },
+      { id: 'g7', subscale: 'Catastrophic Dread', title: 'Sense of Impending Doom', text: 'Feeling afraid, as if something awful or catastrophic might happen?', context: 'Measures acute anticipatory panic and catastrophic dread.' },
+    ],
   },
-  {
-    id: 'dep1',
-    category: 'Depression Subscale (PHQ-2)',
-    subscale: 'Depression',
-    questionNumber: 3,
-    title: 'Anhedonia & Low Interest',
-    text: 'Over the last 2 weeks, how often have you had little interest or pleasure in doing things?',
-    context: 'Evaluates emotional blunting and loss of motivation for studies, hobbies, and social interactions.',
+  phq9: {
+    id: 'phq9',
+    name: 'PHQ-9 Full Depression Scale',
+    badge: '9 Questions · 3 min',
+    tagline: 'Clinical Mood, Energy & Academic Burnout Diagnostic',
+    category: 'Depression Diagnostic',
+    citation: 'Kroenke, Spitzer, Williams (2001) / Harvard mindLAMP',
+    maxScore: 27,
+    icon: '🌧️',
+    timeEstimate: '3 Minutes',
+    description: 'Gold-standard 9-question instrument assessing depressive severity, sleep disruption, chronic energy loss, and concentration difficulties.',
+    options: [
+      { points: 0, label: 'Not at all', desc: 'Zero difficulty reported.' },
+      { points: 1, label: 'Several days', desc: 'Sporadic, mild symptoms.' },
+      { points: 2, label: 'More than half the days', desc: 'Significant disruption in daily routines.' },
+      { points: 3, label: 'Nearly every day', desc: 'Pervasive impairment in motivation and function.' },
+    ],
+    questions: [
+      { id: 'p1', subscale: 'Anhedonia', title: 'Loss of Interest / Pleasure', text: 'Little interest or pleasure in doing things you usually enjoy?', context: 'Evaluates dopamine pathway reward processing.' },
+      { id: 'p2', subscale: 'Depressed Mood', title: 'Down, Depressed, or Hopeless', text: 'Feeling down, depressed, or hopeless about your future?', context: 'Measures pervasive subjective emotional despair.' },
+      { id: 'p3', subscale: 'Sleep Disruption', title: 'Trouble Falling/Staying Asleep', text: 'Trouble falling or staying asleep, or sleeping too much (hypersomnia)?', context: 'Assesses circadian disruption and hostel insomnia.' },
+      { id: 'p4', subscale: 'Vital Energy', title: 'Fatigue & Low Energy', text: 'Feeling tired, sluggish, or having very little physical energy?', context: 'Measures chronic academic exhaustion and burnout.' },
+      { id: 'p5', subscale: 'Appetite / Somatic', title: 'Appetite or Weight Changes', text: 'Poor appetite, skipping meals, or compulsive overeating?', context: 'Screens for somatic manifestations of stress.' },
+      { id: 'p6', subscale: 'Self-Worth', title: 'Feelings of Failure & Guilt', text: 'Feeling bad about yourself — or that you are a failure or have let your family down?', context: 'Evaluates imposter syndrome and punitive self-blame.' },
+      { id: 'p7', subscale: 'Cognitive Function', title: 'Trouble Concentrating', text: 'Trouble concentrating on things, such as studying, attending lectures, or reading?', context: 'Measures executive function and working memory impairment.' },
+      { id: 'p8', subscale: 'Psychomotor Speed', title: 'Motor Slowing or Restlessness', text: 'Moving or speaking noticeably slowly? Or being so fidgety that you move a lot more than usual?', context: 'Assesses central nervous system psychomotor shifts.' },
+      { id: 'p9', subscale: 'Crisis & Safety', title: 'Thoughts of Self-Harm or Death', text: 'Thoughts that you would be better off dead, or of hurting yourself in some way?', context: 'Critical safety check. Instant 24/7 crisis triage routing.' },
+    ],
   },
-  {
-    id: 'dep2',
-    category: 'Depression Subscale (PHQ-2)',
-    subscale: 'Depression',
-    questionNumber: 4,
-    title: 'Depressed Mood & Hopelessness',
-    text: 'Over the last 2 weeks, how often have you been feeling down, depressed, or hopeless?',
-    context: 'Screens for pervasive feelings of discouragement, exhaustion, or emotional burnout.',
+  pss10: {
+    id: 'pss10',
+    name: 'PSS-10 Perceived Stress Scale',
+    badge: '10 Questions · 3 min',
+    tagline: 'Academic Overwhelm & Coping Resilience Index',
+    category: 'Stress & Resilience',
+    citation: 'Cohen, Kamarck, Mermelstein (1983) / Harvard mindLAMP',
+    maxScore: 40,
+    icon: '🧘',
+    timeEstimate: '3 Minutes',
+    description: 'Measures how unpredictable, uncontrollable, and overloaded university students perceive their semester and coursework to be.',
+    options: [
+      { points: 0, label: '0 - Never', desc: 'Never experienced in past month.' },
+      { points: 1, label: '1 - Almost Never', desc: 'Rarely happens.' },
+      { points: 2, label: '2 - Sometimes', desc: 'Occurs occasionally.' },
+      { points: 3, label: '3 - Fairly Often', desc: 'Happens frequently.' },
+      { points: 4, label: '4 - Very Often', desc: 'Constant daily experience.' },
+    ],
+    questions: [
+      { id: 'ps1', isReversed: false, title: 'Unexpected Stressors', text: 'In the last month, how often have you been upset because of something that happened unexpectedly on campus?', context: 'Measures cognitive adaptability to surprise stressors.' },
+      { id: 'ps2', isReversed: false, title: 'Loss of Control', text: 'In the last month, how often have you felt unable to control the important things in your life?', context: 'Evaluates perceived locus of control.' },
+      { id: 'ps3', isReversed: false, title: 'Nervous & Stressed', text: 'In the last month, how often have you felt nervous and "stressed out"?', context: 'Measures subjective cumulative stress load.' },
+      { id: 'ps4', isReversed: true, title: 'Confidence in Problem Solving', text: 'In the last month, how often have you felt confident about your ability to handle your personal problems? (Positive)', context: 'Assesses self-efficacy and problem-solving confidence.' },
+      { id: 'ps5', isReversed: true, title: 'Things Going Your Way', text: 'In the last month, how often have you felt that things were going your way? (Positive)', context: 'Measures cognitive optimism and morale.' },
+      { id: 'ps6', isReversed: false, title: 'Inability to Cope', text: 'In the last month, how often have you found that you could not cope with all the coursework you had to do?', context: 'Evaluates perceived workload capacity threshold.' },
+      { id: 'ps7', isReversed: true, title: 'Controlling Irritations', text: 'In the last month, how often have you been able to control irritations in your hostel/study life? (Positive)', context: 'Measures emotional regulation mastery.' },
+      { id: 'ps8', isReversed: true, title: 'Feeling on Top of Things', text: 'In the last month, how often have you felt that you were on top of things? (Positive)', context: 'Measures perceived mastery and life organization.' },
+      { id: 'ps9', isReversed: false, title: 'Anger at External Friction', text: 'In the last month, how often have you been angered because of things outside of your control?', context: 'Screens for frustration with external hurdles.' },
+      { id: 'ps10', isReversed: false, title: 'Difficulties Piling Up', text: 'In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?', context: 'Measures cumulative helplessness and overwhelm.' },
+    ],
   },
-];
-
-const PHQ4_OPTIONS = [
-  {
-    points: 0,
-    label: 'Not at all',
-    desc: 'Zero distress or disruption in your normal daily routine.',
+  isi: {
+    id: 'isi',
+    name: 'ISI Insomnia Severity Index',
+    badge: '7 Questions · 2 min',
+    tagline: 'Sleep Quality, Latency & Circadian Health Battery',
+    category: 'Sleep Architecture',
+    citation: 'Morin, Belleville, Bélanger, Ivers (2011) / Harvard mindLAMP',
+    maxScore: 28,
+    icon: '🌙',
+    timeEstimate: '2 Minutes',
+    description: 'Evaluates sleep-onset latency, nocturnal awakenings, daytime academic fatigue, and sleep-related anxiety in students.',
+    options: [
+      { points: 0, label: 'None', desc: 'No difficulty at all.' },
+      { points: 1, label: 'Mild', desc: 'Slight delay, not bothersome.' },
+      { points: 2, label: 'Moderate', desc: 'Noticeably delayed (> 30 mins).' },
+      { points: 3, label: 'Severe', desc: 'Severe sleep disruption.' },
+      { points: 4, label: 'Very Severe', desc: 'Near total inability to sleep restfully.' },
+    ],
+    questions: [
+      { id: 'is1', title: 'Difficulty Falling Asleep', text: 'Difficulty falling asleep (Taking > 30 minutes to drift off)?', context: 'Measures pre-sleep cognitive hyperarousal and racing thoughts.' },
+      { id: 'is2', title: 'Difficulty Staying Asleep', text: 'Difficulty staying asleep (Waking up frequently in the middle of the night)?', context: 'Assesses sleep fragmentation and micro-awakenings.' },
+      { id: 'is3', title: 'Waking Up Too Early', text: 'Problems waking up too early in the morning and unable to get back to sleep?', context: 'Evaluates terminal early awakenings linked to low mood.' },
+      { id: 'is4', title: 'Sleep Pattern Satisfaction', text: 'How satisfied or dissatisfied are you with your current sleep pattern?', context: 'Measures subjective sleep satisfaction index.' },
+      { id: 'is5', title: 'Noticeability to Others', text: 'How noticeable to peers/professors do you think your sleep problem is in terms of impairing performance?', context: 'Evaluates external visibility of exhaustion.' },
+      { id: 'is6', title: 'Worry & Distress About Sleep', text: 'How worried or distressed are you about your current sleep difficulties?', context: 'Measures secondary sleep anxiety (insomniaphobia).' },
+      { id: 'is7', title: 'Interference with Daily Functioning', text: 'To what extent does your sleep problem interfere with your daily academic work, memory, or focus?', context: 'Quantifies daytime cognitive and executive impairment.' },
+    ],
   },
-  {
-    points: 1,
-    label: 'Several days',
-    desc: 'Occasional mild tension or fatigue that passes with rest.',
-  },
-  {
-    points: 2,
-    label: 'More than half the days',
-    desc: 'Frequent worry or low mood noticeably impacting focus & sleep.',
-  },
-  {
-    points: 3,
-    label: 'Nearly every day',
-    desc: 'Persistent, chronic distress severely affecting academic & personal life.',
-  },
-];
+};
 
 // ─── 2. Aware 5-4-3-2-1 Somatic Grounding Steps ─────────────────────
 const GROUNDING_STEPS = [
@@ -303,9 +383,10 @@ export default function WellnessPage() {
 
   // ─── 1. ARTICULATED STEP-BY-STEP mindLAMP ASSESSMENT STATE ───────
   // Step: 'intro' | 'question' | 'report'
+  const [selectedBattery, setSelectedBattery] = useState('phq4'); // 'phq4' | 'gad7' | 'phq9' | 'pss10' | 'isi'
   const [testStage, setTestStage] = useState('intro');
   const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [answers, setAnswers] = useState({}); // { anx1: 0, anx2: 1, dep1: 2, dep2: 0 }
+  const [answers, setAnswers] = useState({});
   const [assessmentResult, setAssessmentResult] = useState(() => {
     try {
       const saved = localStorage.getItem(`champ_mindlamp_result_${userId}`);
@@ -313,84 +394,280 @@ export default function WellnessPage() {
     } catch { return null; }
   });
 
-  const handleStartTest = () => {
+  const activeBatteryConfig = MINDLAMP_BATTERY[selectedBattery] || MINDLAMP_BATTERY.phq4;
+
+  const handleStartTest = (batteryKey = selectedBattery) => {
+    setSelectedBattery(batteryKey);
     setAnswers({});
     setCurrentQIndex(0);
     setTestStage('question');
   };
 
   const handleSelectAnswer = (points) => {
-    const currentQ = PHQ4_QUESTIONS[currentQIndex];
-    const updatedAnswers = { ...answers, [currentQ.id]: points };
+    const currentQ = activeBatteryConfig.questions[currentQIndex];
+    let finalPoints = points;
+    // Handle reverse scoring for PSS-10 if applicable
+    if (currentQ.isReversed) {
+      finalPoints = 4 - points;
+    }
+    const updatedAnswers = { ...answers, [currentQ.id]: finalPoints };
     setAnswers(updatedAnswers);
 
-    if (currentQIndex < PHQ4_QUESTIONS.length - 1) {
+    if (currentQIndex < activeBatteryConfig.questions.length - 1) {
       setTimeout(() => {
         setCurrentQIndex(currentQIndex + 1);
-      }, 180);
+      }, 160);
     } else {
-      // Calculate and finalize assessment
       setTimeout(() => {
-        computeAndFinalizeTest(updatedAnswers);
-      }, 200);
+        computeAndFinalizeTest(updatedAnswers, selectedBattery);
+      }, 180);
     }
   };
 
-  const computeAndFinalizeTest = (finalAnswers) => {
+  const computeAndFinalizeTest = (finalAnswers, batteryKey) => {
+    const battery = MINDLAMP_BATTERY[batteryKey] || MINDLAMP_BATTERY.phq4;
     const totalScore = Object.values(finalAnswers).reduce((a, b) => a + (b || 0), 0);
-    const anxietyScore = (finalAnswers.anx1 || 0) + (finalAnswers.anx2 || 0);
-    const depressionScore = (finalAnswers.dep1 || 0) + (finalAnswers.dep2 || 0);
+    const maxScore = battery.maxScore;
 
-    let tier = 'Minimal Psychological Distress';
+    let tier = 'Minimal / Normal Baseline';
     let riskLevel = 'Low';
     let color = '#1B7A4B';
     let bg = '#D8F3E5';
-    let clinicalSummary = 'Your responses reflect a stable, well-regulated psychological baseline. Occasional stress is normal during university semesters.';
-    let recommendations = [
-      'Maintain steady sleep hygiene (7-8 hours per night).',
-      'Use 432Hz ambient focus audio during intensive study blocks.',
-      'Take regular 5-minute movement breaks between lectures.',
-    ];
+    let clinicalSummary = '';
+    let recommendations = [];
+    let subscales = [];
 
-    if (totalScore >= 9) {
-      tier = 'Severe Distress (High Clinical Priority)';
-      riskLevel = 'High';
-      color = C.urgent;
-      bg = '#FFE8E5';
-      clinicalSummary = 'Your screening indicates significant cumulative anxiety and mood burden. These symptoms may be interfering with your ability to focus, rest, or enjoy campus life.';
-      recommendations = [
-        'Book a free, confidential 1-on-1 consultation with Lead Psychologist Dr. Meera Nambiar.',
-        'Reach out to Tele-MANAS (14416) for 24/7 free clinical tele-counselling.',
-        'Notify your hostel warden or trusted friend if you feel physically exhausted.',
+    // Instrument-Specific Clinical Scoring Logics
+    if (batteryKey === 'phq4') {
+      const anxietyScore = (finalAnswers.anx1 || 0) + (finalAnswers.anx2 || 0);
+      const depressionScore = (finalAnswers.dep1 || 0) + (finalAnswers.dep2 || 0);
+      subscales = [
+        { label: 'Anxiety Subscale (GAD-2)', score: anxietyScore, max: 6, status: anxietyScore >= 3 ? 'Elevated' : 'Normal' },
+        { label: 'Depression Subscale (PHQ-2)', score: depressionScore, max: 6, status: depressionScore >= 3 ? 'Elevated' : 'Normal' },
       ];
-    } else if (totalScore >= 6) {
-      tier = 'Moderate Psychological Distress';
-      riskLevel = 'Moderate';
-      color = '#B45309';
-      bg = '#FFF4E5';
-      clinicalSummary = 'Your screening detects noticeable academic anxiety and fatigue. Proactive coping strategies are strongly recommended before midterms intensify.';
-      recommendations = [
-        'Schedule a 30-minute stress-management session with Dr. Rajesh Sharma.',
-        'Practice the 5-4-3-2-1 Somatic Grounding drill when feeling overwhelmed.',
-        'Challenge catastrophic study assumptions using our CBT Reframer.',
+
+      if (totalScore >= 9) {
+        tier = 'Severe Psychological Distress';
+        riskLevel = 'High';
+        color = C.urgent;
+        bg = '#FFE8E5';
+        clinicalSummary = 'Your screening indicates significant cumulative anxiety and depressive symptoms. Academic functioning and sleep are likely impaired.';
+        recommendations = [
+          'Book an immediate confidential consultation with Lead Psychologist Dr. Meera Nambiar.',
+          'Connect with Tele-MANAS (14416) for 24/7 free clinical tele-counselling.',
+          'Inform your hostel warden or academic mentor for temporary workload accommodation.',
+        ];
+      } else if (totalScore >= 6) {
+        tier = 'Moderate Psychological Distress';
+        riskLevel = 'Moderate';
+        color = '#B45309';
+        bg = '#FFF4E5';
+        clinicalSummary = 'Screening detects noticeable academic anxiety and emotional fatigue. Proactive stress management is advised before exam periods.';
+        recommendations = [
+          'Schedule a 30-minute stress-management consultation with Dr. Rajesh Sharma.',
+          'Practice the 5-4-3-2-1 Somatic Grounding drill when feeling overwhelmed.',
+          'Use our MentaLLaMA & CCI Thought Challenger to reframe catastrophic study thoughts.',
+        ];
+      } else if (totalScore >= 3) {
+        tier = 'Mild Campus Stress';
+        riskLevel = 'Mild';
+        color = C.primary;
+        bg = C.primarySoft;
+        clinicalSummary = 'Mild tension detected, likely related to project deadlines or hostel adjustments.';
+        recommendations = [
+          'Practice the 4-7-8 parasympathetic breathing reset twice daily.',
+          'Maintain steady sleep hygiene (7-8 hours).',
+          'Connect with peers on our Campus Solidarity Wall.',
+        ];
+      } else {
+        clinicalSummary = 'Your responses reflect a stable, well-regulated psychological baseline.';
+        recommendations = [
+          'Keep up regular study breaks and physical exercise.',
+          'Use 432Hz ambient focus audio during intensive study blocks.',
+        ];
+      }
+    } else if (batteryKey === 'gad7') {
+      subscales = [
+        { label: 'Somatic & Motor Tension', score: (finalAnswers.g4 || 0) + (finalAnswers.g5 || 0), max: 6, status: (finalAnswers.g4 || 0) + (finalAnswers.g5 || 0) >= 3 ? 'Elevated' : 'Normal' },
+        { label: 'Cognitive Rumination & Dread', score: (finalAnswers.g1 || 0) + (finalAnswers.g2 || 0) + (finalAnswers.g3 || 0) + (finalAnswers.g7 || 0), max: 12, status: 'Active' },
       ];
-    } else if (totalScore >= 3) {
-      tier = 'Mild Campus Stress';
-      riskLevel = 'Mild';
-      color = C.primary;
-      bg = C.primarySoft;
-      clinicalSummary = 'Mild stress detected, likely related to impending project deadlines or hostel adjustments.';
-      recommendations = [
-        'Practice the 4-7-8 parasympathetic breathing reset twice daily.',
-        'Stay well hydrated and ensure proper nutrition during lab hours.',
-        'Connect with peers in our Campus Solidarity Wall.',
+
+      if (totalScore >= 15) {
+        tier = 'Severe Generalized Anxiety';
+        riskLevel = 'High';
+        color = C.urgent;
+        bg = '#FFE8E5';
+        clinicalSummary = 'Clinical-grade anxiety symptoms detected. Autonomic hyper-arousal and persistent intrusive worrying require psychological support.';
+        recommendations = [
+          'Clinical consultation with Dr. Meera Nambiar is strongly recommended.',
+          'Utilize 24/7 crisis support via Tele-MANAS (14416).',
+          'Practice parasympathetic vagal breathing (4-7-8) to reduce physical panic spikes.',
+        ];
+      } else if (totalScore >= 10) {
+        tier = 'Moderate Generalized Anxiety';
+        riskLevel = 'Moderate';
+        color = '#B45309';
+        bg = '#FFF4E5';
+        clinicalSummary = 'Frequent academic anxiety and somatic restlessness interfering with concentration and daily hostel life.';
+        recommendations = [
+          'Book a session with Student Wellness Counsellor Dr. Rajesh Sharma.',
+          'Use CCI Cognitive Restructuring to challenge catastrophizing thoughts.',
+        ];
+      } else if (totalScore >= 5) {
+        tier = 'Mild Anxiety Symptoms';
+        riskLevel = 'Mild';
+        color = C.primary;
+        bg = C.primarySoft;
+        clinicalSummary = 'Mild anticipatory anxiety regarding academic workloads or deadlines.';
+        recommendations = [
+          'Implement daily 5-minute somatic sensory grounding exercises.',
+          'Maintain regular sleep schedules and limit late-night caffeine.',
+        ];
+      } else {
+        clinicalSummary = 'Minimal to no anxiety symptoms reported.';
+        recommendations = ['Maintain positive campus wellness habits.'];
+      }
+    } else if (batteryKey === 'phq9') {
+      const hasCrisisThought = (finalAnswers.p9 || 0) > 0;
+      subscales = [
+        { label: 'Cognitive & Affective Core', score: (finalAnswers.p1 || 0) + (finalAnswers.p2 || 0) + (finalAnswers.p6 || 0), max: 9, status: 'Evaluated' },
+        { label: 'Somatic & Neurovegetative (Sleep/Energy/Appetite)', score: (finalAnswers.p3 || 0) + (finalAnswers.p4 || 0) + (finalAnswers.p5 || 0), max: 9, status: 'Evaluated' },
+        { label: 'Safety & Crisis Indicator (Item 9)', score: finalAnswers.p9 || 0, max: 3, status: hasCrisisThought ? 'ALERT - Clinical Review Required' : 'Clear' },
       ];
+
+      if (totalScore >= 20 || hasCrisisThought) {
+        tier = hasCrisisThought ? 'Severe Mood Symptoms (Immediate Crisis Safety Priority)' : 'Severe Depressive Episode';
+        riskLevel = 'High';
+        color = C.urgent;
+        bg = '#FFE8E5';
+        clinicalSummary = 'Significant clinical depression symptoms detected with marked impairment in energy, mood, and cognitive concentration.';
+        recommendations = [
+          'Emergency priority: Reach out immediately to Tele-MANAS (14416) or Campus Medical Desk (108).',
+          'Urgent evaluation with Lead Psychologist Dr. Meera Nambiar.',
+          'Do not isolate in your hostel room; stay with a trusted friend or family member.',
+        ];
+      } else if (totalScore >= 15) {
+        tier = 'Moderately Severe Depressive Symptoms';
+        riskLevel = 'High';
+        color = C.urgent;
+        bg = '#FFE8E5';
+        clinicalSummary = 'Marked reduction in vitality, concentration, and emotional well-being.';
+        recommendations = [
+          'Book an in-person session with campus psychologists.',
+          'Engage with structured CBT behavioral activation strategies.',
+        ];
+      } else if (totalScore >= 10) {
+        tier = 'Moderate Mood Disturbance';
+        riskLevel = 'Moderate';
+        color = '#B45309';
+        bg = '#FFF4E5';
+        clinicalSummary = 'Notable emotional blunting, low energy, and academic disengagement.';
+        recommendations = [
+          'Schedule a wellness counselling session with Dr. Rajesh Sharma.',
+          'Break study tasks into small 15-minute micro-goals.',
+        ];
+      } else if (totalScore >= 5) {
+        tier = 'Mild Depressive Symptoms';
+        riskLevel = 'Mild';
+        color = C.primary;
+        bg = C.primarySoft;
+        clinicalSummary = 'Mild, transient low mood or fatigue, common during exam crunches.';
+        recommendations = [
+          'Prioritize 8 hours of restorative sleep and nutritious meals.',
+          'Engage in light physical exercise and campus social activities.',
+        ];
+      } else {
+        clinicalSummary = 'Minimal or no depressive symptoms reported.';
+        recommendations = ['Healthy emotional and psychological regulation.'];
+      }
+    } else if (batteryKey === 'pss10') {
+      subscales = [
+        { label: 'Perceived Helplessness (Negative Items)', score: (finalAnswers.ps1 || 0) + (finalAnswers.ps2 || 0) + (finalAnswers.ps3 || 0) + (finalAnswers.ps6 || 0) + (finalAnswers.ps9 || 0) + (finalAnswers.ps10 || 0), max: 24, status: 'Calculated' },
+        { label: 'Perceived Self-Efficacy (Reversed Items)', score: (finalAnswers.ps4 || 0) + (finalAnswers.ps5 || 0) + (finalAnswers.ps7 || 0) + (finalAnswers.ps8 || 0), max: 16, status: 'Calculated' },
+      ];
+
+      if (totalScore >= 27) {
+        tier = 'High Perceived Academic Stress';
+        riskLevel = 'High';
+        color = C.urgent;
+        bg = '#FFE8E5';
+        clinicalSummary = 'You perceive your life and academic demands as highly unpredictable, uncontrollable, and overwhelming.';
+        recommendations = [
+          'Work with Dr. Rajesh Sharma on academic workload triage and boundaries.',
+          'Practice cognitive restructuring with our CCI Thought Challenger.',
+          'Delegate non-essential tasks and establish structured daily study blocks.',
+        ];
+      } else if (totalScore >= 14) {
+        tier = 'Moderate Academic Stress';
+        riskLevel = 'Moderate';
+        color = '#B45309';
+        bg = '#FFF4E5';
+        clinicalSummary = 'Moderate stress levels typical of rigorous university coursework.';
+        recommendations = [
+          'Practice time-boxing and 4-7-8 breathing before difficult exams.',
+          'Participate in campus peer support circles.',
+        ];
+      } else {
+        tier = 'Low Perceived Stress';
+        riskLevel = 'Low';
+        color = '#1B7A4B';
+        bg = '#D8F3E5';
+        clinicalSummary = 'Strong coping capacity and high perceived control over coursework and daily routines.';
+        recommendations = ['Continue your effective self-regulation strategies.'];
+      }
+    } else if (batteryKey === 'isi') {
+      subscales = [
+        { label: 'Sleep Quality & Nocturnal Disruption', score: (finalAnswers.is1 || 0) + (finalAnswers.is2 || 0) + (finalAnswers.is3 || 0), max: 12, status: 'Assessed' },
+        { label: 'Daytime Impairment & Sleep Anxiety', score: (finalAnswers.is4 || 0) + (finalAnswers.is5 || 0) + (finalAnswers.is6 || 0) + (finalAnswers.is7 || 0), max: 16, status: 'Assessed' },
+      ];
+
+      if (totalScore >= 22) {
+        tier = 'Clinical Insomnia (Severe)';
+        riskLevel = 'High';
+        color = C.urgent;
+        bg = '#FFE8E5';
+        clinicalSummary = 'Severe sleep fragmentation and sleep-onset latency leading to marked daytime exhaustion and memory issues.';
+        recommendations = [
+          'Consult with campus physician Dr. Aditi Rao & Lead Psychologist Dr. Meera Nambiar.',
+          'Implement stimulus control therapy (bed strictly for sleep, zero laptop in bed).',
+        ];
+      } else if (totalScore >= 15) {
+        tier = 'Clinical Insomnia (Moderate Severity)';
+        riskLevel = 'Moderate';
+        color = '#B45309';
+        bg = '#FFF4E5';
+        clinicalSummary = 'Significant difficulty falling or staying asleep with noticeable daytime fatigue.';
+        recommendations = [
+          'Listen to 432Hz ambient sleep audio 30 minutes before sleep.',
+          'Avoid screens 45 minutes prior to bedtime; avoid late energy drinks.',
+        ];
+      } else if (totalScore >= 8) {
+        tier = 'Subthreshold Insomnia';
+        riskLevel = 'Mild';
+        color = C.primary;
+        bg = C.primarySoft;
+        clinicalSummary = 'Mild sleep difficulty, likely related to irregular hostel sleep schedules or late study nights.';
+        recommendations = [
+          'Set a fixed wake-up time 7 days a week to stabilize circadian rhythm.',
+          'Use our 4-7-8 breathing exercise when thoughts race at bedtime.',
+        ];
+      } else {
+        tier = 'No Clinically Significant Insomnia';
+        riskLevel = 'Low';
+        color = '#1B7A4B';
+        bg = '#D8F3E5';
+        clinicalSummary = 'Healthy, restorative sleep architecture reported.';
+        recommendations = ['Maintain consistent sleep and wake timing.'];
+      }
     }
 
     const resultObj = {
+      batteryKey,
+      batteryName: battery.name,
+      batteryCitation: battery.citation,
       totalScore,
-      anxietyScore,
-      depressionScore,
+      maxScore,
+      subscales,
       tier,
       riskLevel,
       color,
@@ -741,9 +1018,9 @@ export default function WellnessPage() {
 
   // ─── NAV TABS ────────────────────────────────────────────────────
   const NAV_ITEMS = [
-    { id: 'sanctuary',   label: '✨ Sanctuary Home',      Icon: HeartPulse },
-    { id: 'mindlamp',    label: '📊 mindLAMP Test (PHQ-4)', Icon: Activity },
-    { id: 'grounding',   label: '👁️ 5-4-3-2-1 Grounding', Icon: Compass },
+    { id: 'sanctuary',   label: '✨ Sanctuary Home',         Icon: HeartPulse },
+    { id: 'mindlamp',    label: '📊 mindLAMP Battery Suite', Icon: Activity },
+    { id: 'grounding',   label: '👁️ 5-4-3-2-1 Grounding',   Icon: Compass },
     { id: 'cbt',         label: '🧠 CBT Reframer',        Icon: Sparkles },
     { id: 'breathing',   label: '🫁 4-7-8 Breathing',     Icon: Wind },
     { id: 'counsellors', label: '🩺 Book Psychologist',   Icon: User },
@@ -1090,63 +1367,135 @@ export default function WellnessPage() {
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 2: WORLD-CLASS ARTICULATED STEP-BY-STEP mindLAMP ASSESSMENT
+          VIEW 2: HARVARD mindLAMP CLINICAL PSYCHIATRY ASSESSMENT SUITE
       ──────────────────────────────────────────────────────────────── */}
       {activeView === 'mindlamp' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           
-          {/* ── STAGE A: INTRO / ONBOARDING SCREEN ── */}
+          {/* ── STAGE A: INTRO / BATTERY SELECTION SCREEN ── */}
           {testStage === 'intro' && (
             <div
               style={{
                 background: C.surface,
                 borderRadius: 24,
-                padding: '36px 24px',
+                padding: '30px 22px',
                 border: `1.5px solid ${C.border}`,
                 boxShadow: '0 8px 30px rgba(0,0,0,0.03)',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
-                textAlign: 'center',
-                gap: 18,
+                gap: 20,
               }}
             >
-              <div style={{ width: 56, height: 56, borderRadius: 18, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Activity size={28} color={C.primary} />
-              </div>
-
-              <div>
-                <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Harvard BIDMC Digital Psychiatry Framework
-                </span>
-                <div className="champ-heading" style={{ fontSize: 24, fontWeight: 800, color: C.ink, marginTop: 4 }}>
-                  mindLAMP Clinical Anxiety & Mood Screener (PHQ-4)
+              <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: C.primarySoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Activity size={26} color={C.primary} />
                 </div>
-                <div style={{ fontSize: 13, color: C.soft, maxWidth: 540, marginTop: 8, lineHeight: 1.55 }}>
-                  This standardized 4-question clinical assessment is used globally by universities and clinics to measure <strong>Generalized Anxiety (GAD-2)</strong> and <strong>Depression (PHQ-2)</strong> levels over the past 14 days.
+
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    Harvard BIDMC Digital Psychiatry Framework
+                  </span>
+                  <div className="champ-heading" style={{ fontSize: 22, fontWeight: 800, color: C.ink, marginTop: 4 }}>
+                    mindLAMP Clinical Assessment Battery Suite
+                  </div>
+                  <div style={{ fontSize: 12.5, color: C.soft, maxWidth: 580, marginTop: 4, lineHeight: 1.5 }}>
+                    Select from 5 standardized clinical screening instruments used globally in digital psychiatry to measure anxiety, depressive mood, academic stress, and sleep disruption.
+                  </div>
+                </div>
+
+                {/* Quality & Safety Badges */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <span style={{ background: C.bg, padding: '5px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 5, border: `1px solid ${C.border}` }}>
+                    🔒 100% Client-Side Confidential
+                  </span>
+                  <span style={{ background: C.bg, padding: '5px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 5, border: `1px solid ${C.border}` }}>
+                    🩺 Clinically Validated Scoring
+                  </span>
+                  <span style={{ background: C.bg, padding: '5px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 5, border: `1px solid ${C.border}` }}>
+                    📋 Tele-MANAS Triage Integrated
+                  </span>
                 </div>
               </div>
 
-              {/* Quality & Safety Badges */}
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-                <span style={{ background: C.bg, padding: '6px 12px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C.border}` }}>
-                  🔒 100% Confidential & Private
-                </span>
-                <span style={{ background: C.bg, padding: '6px 12px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C.border}` }}>
-                  ⏱️ 45 Seconds
-                </span>
-                <span style={{ background: C.bg, padding: '6px 12px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, color: C.ink, display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${C.border}` }}>
-                  🩺 Clinically Validated Scoring
-                </span>
+              {/* 5-Instrument Battery Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+                {Object.values(MINDLAMP_BATTERY).map((bat) => {
+                  const isSelected = selectedBattery === bat.id;
+                  return (
+                    <div
+                      key={bat.id}
+                      onClick={() => setSelectedBattery(bat.id)}
+                      style={{
+                        background: isSelected ? '#F0F9F5' : '#fff',
+                        border: `2px solid ${isSelected ? C.primary : C.border}`,
+                        borderRadius: 16,
+                        padding: 16,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: 10,
+                        transition: 'all 0.15s ease',
+                        boxShadow: isSelected ? '0 4px 14px rgba(47,122,104,0.15)' : 'none',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 18 }}>{bat.icon}</span>
+                            <span style={{ fontSize: 13.5, fontWeight: 800, color: isSelected ? C.primary : C.ink }}>
+                              {bat.name}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: 10.5, fontWeight: 800, background: isSelected ? C.primary : C.bg, color: isSelected ? '#fff' : C.soft, padding: '2px 8px', borderRadius: 6 }}>
+                            {bat.badge}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 11.5, color: isSelected ? C.primary : C.soft, fontWeight: 600, marginTop: 4 }}>
+                          {bat.tagline}
+                        </div>
+                        <div style={{ fontSize: 11, color: C.soft, marginTop: 6, lineHeight: 1.4 }}>
+                          {bat.description}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${isSelected ? '#D0EAE2' : C.border}`, paddingTop: 8 }}>
+                        <span style={{ fontSize: 10, color: C.soft, fontStyle: 'italic' }}>
+                          {bat.citation.split('(')[0]}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartTest(bat.id);
+                          }}
+                          style={{
+                            background: isSelected ? C.primary : C.bg,
+                            color: isSelected ? '#fff' : C.ink,
+                            border: `1px solid ${isSelected ? C.primary : C.border}`,
+                            padding: '4px 10px',
+                            borderRadius: 6,
+                            fontSize: 11,
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Start {bat.id.toUpperCase()} →
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              {/* Main Begin Assessment Action */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 4 }}>
                 <button
-                  onClick={handleStartTest}
+                  onClick={() => handleStartTest(selectedBattery)}
                   style={{
                     background: C.primary,
                     color: '#fff',
-                    padding: '12px 32px',
+                    padding: '12px 36px',
                     borderRadius: 14,
                     fontSize: 14,
                     fontWeight: 800,
@@ -1158,7 +1507,7 @@ export default function WellnessPage() {
                     boxShadow: '0 4px 14px rgba(47,122,104,0.3)',
                   }}
                 >
-                  <span>Begin Assessment</span>
+                  <span>Begin {activeBatteryConfig.name}</span>
                   <ArrowRight size={16} />
                 </button>
 
@@ -1176,7 +1525,7 @@ export default function WellnessPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    View Past Report
+                    View Past Report ({assessmentResult.batteryName})
                   </button>
                 )}
               </div>
@@ -1201,10 +1550,10 @@ export default function WellnessPage() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                   <span style={{ fontSize: 11.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    {PHQ4_QUESTIONS[currentQIndex].category} · Question {currentQIndex + 1} of 4
+                    {activeBatteryConfig.name} · Item {currentQIndex + 1} of {activeBatteryConfig.questions.length}
                   </span>
                   <span style={{ fontSize: 11.5, color: C.soft, fontWeight: 700 }}>
-                    {Math.round(((currentQIndex + 1) / 4) * 100)}% Completed
+                    {Math.round(((currentQIndex + 1) / activeBatteryConfig.questions.length) * 100)}% Completed
                   </span>
                 </div>
 
@@ -1212,7 +1561,7 @@ export default function WellnessPage() {
                 <div style={{ width: '100%', height: 6, background: C.bg, borderRadius: 99, overflow: 'hidden' }}>
                   <div
                     style={{
-                      width: `${((currentQIndex + 1) / 4) * 100}%`,
+                      width: `${((currentQIndex + 1) / activeBatteryConfig.questions.length) * 100}%`,
                       height: '100%',
                       background: C.primary,
                       transition: 'width 0.3s ease-in-out',
@@ -1223,22 +1572,27 @@ export default function WellnessPage() {
 
               {/* Question Body */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>
-                  {PHQ4_QUESTIONS[currentQIndex].title}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, background: C.primarySoft, color: C.primary, padding: '2px 8px', borderRadius: 6, textTransform: 'uppercase' }}>
+                    {activeBatteryConfig.questions[currentQIndex].subscale || activeBatteryConfig.category}
+                  </span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>
+                    {activeBatteryConfig.questions[currentQIndex].title}
+                  </span>
+                </div>
                 <div className="champ-heading" style={{ fontSize: 20, fontWeight: 800, color: C.ink, lineHeight: 1.35 }}>
-                  {PHQ4_QUESTIONS[currentQIndex].text}
+                  {activeBatteryConfig.questions[currentQIndex].text}
                 </div>
                 <div style={{ fontSize: 12, color: C.soft, fontStyle: 'italic', marginTop: 2 }}>
-                  {PHQ4_QUESTIONS[currentQIndex].context}
+                  {activeBatteryConfig.questions[currentQIndex].context}
                 </div>
               </div>
 
-              {/* 4 Interactive Option Cards */}
+              {/* Interactive Option Cards */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {PHQ4_OPTIONS.map((opt) => {
-                  const currentQ = PHQ4_QUESTIONS[currentQIndex];
-                  const isSelected = answers[currentQ.id] === opt.points;
+                {activeBatteryConfig.options.map((opt) => {
+                  const currentQ = activeBatteryConfig.questions[currentQIndex];
+                  const isSelected = answers[currentQ.id] === (currentQ.isReversed ? 4 - opt.points : opt.points);
                   return (
                     <button
                       key={opt.points}
@@ -1305,12 +1659,16 @@ export default function WellnessPage() {
                     gap: 4,
                   }}
                 >
-                  <ArrowLeft size={14} /> Previous Question
+                  <ArrowLeft size={14} /> Previous Item
                 </button>
 
-                <span style={{ fontSize: 11.5, color: C.soft }}>
-                  Tap any option to auto-advance
-                </span>
+                <button
+                  type="button"
+                  onClick={handleRetake}
+                  style={{ background: 'none', border: 'none', color: C.soft, fontSize: 11.5, cursor: 'pointer' }}
+                >
+                  Cancel & Change Battery
+                </button>
               </div>
             </div>
           )}
@@ -1336,13 +1694,13 @@ export default function WellnessPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10, borderBottom: `1px solid ${C.border}`, paddingBottom: 14 }}>
                   <div>
                     <span style={{ fontSize: 10.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                      Diagnostic Result · Harvard mindLAMP Protocol
+                      Diagnostic Result · {assessmentResult.batteryName}
                     </span>
                     <div className="champ-heading" style={{ fontSize: 20, fontWeight: 800, color: C.ink, marginTop: 2 }}>
                       Psychological Assessment Summary
                     </div>
                     <div style={{ fontSize: 11.5, color: C.soft, marginTop: 2 }}>
-                      Generated for <strong>{user?.name || 'Campus Student'}</strong> on {assessmentResult.date}
+                      Evaluated for <strong>{user?.name || 'Campus Student'}</strong> on {assessmentResult.date} · <em>{assessmentResult.batteryCitation}</em>
                     </div>
                   </div>
 
@@ -1357,7 +1715,7 @@ export default function WellnessPage() {
                       onClick={handleRetake}
                       style={{ background: C.primary, color: '#fff', border: 'none', padding: '6px 14px', borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
                     >
-                      <RotateCcw size={13} /> Retake Test
+                      <RotateCcw size={13} /> Change / Retake Battery
                     </button>
                   </div>
                 </div>
@@ -1375,50 +1733,42 @@ export default function WellnessPage() {
                     </div>
 
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>PHQ-4 Index</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>{assessmentResult.batteryKey?.toUpperCase()} Index</span>
                       <div style={{ fontSize: 26, fontWeight: 900, color: assessmentResult.color, lineHeight: 1 }}>
-                        {assessmentResult.totalScore} <span style={{ fontSize: 14, fontWeight: 600, color: C.soft }}>/ 12</span>
+                        {assessmentResult.totalScore} <span style={{ fontSize: 14, fontWeight: 600, color: C.soft }}>/ {assessmentResult.maxScore}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Visual Segmented Severity Bar */}
-                  <div style={{ display: 'flex', gap: 4, height: 8, borderRadius: 99, overflow: 'hidden', background: 'rgba(0,0,0,0.06)', marginTop: 4 }}>
-                    <div style={{ flex: 2, background: '#1B7A4B', opacity: assessmentResult.totalScore <= 2 ? 1 : 0.25 }} title="Minimal (0-2)" />
-                    <div style={{ flex: 3, background: C.primary, opacity: assessmentResult.totalScore >= 3 && assessmentResult.totalScore <= 5 ? 1 : 0.25 }} title="Mild (3-5)" />
-                    <div style={{ flex: 3, background: '#B45309', opacity: assessmentResult.totalScore >= 6 && assessmentResult.totalScore <= 8 ? 1 : 0.25 }} title="Moderate (6-8)" />
-                    <div style={{ flex: 4, background: C.urgent, opacity: assessmentResult.totalScore >= 9 ? 1 : 0.25 }} title="Severe (9-12)" />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.soft, fontWeight: 700 }}>
-                    <span>0 Minimal</span>
-                    <span>3 Mild</span>
-                    <span>6 Moderate</span>
-                    <span>12 Severe</span>
+                  {/* Visual Progress Bar */}
+                  <div style={{ width: '100%', height: 8, borderRadius: 99, overflow: 'hidden', background: 'rgba(0,0,0,0.06)', marginTop: 4 }}>
+                    <div
+                      style={{
+                        width: `${Math.min(100, Math.round((assessmentResult.totalScore / assessmentResult.maxScore) * 100))}%`,
+                        height: '100%',
+                        background: assessmentResult.color,
+                        transition: 'width 0.4s ease',
+                      }}
+                    />
                   </div>
                 </div>
 
                 {/* Subscale Breakdown Breakdown Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <div style={{ background: C.bg, borderRadius: 14, padding: 14, border: `1px solid ${C.border}` }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>Anxiety Subscale (GAD-2)</span>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: C.ink, marginTop: 2 }}>
-                      {assessmentResult.anxietyScore} <span style={{ fontSize: 12, color: C.soft }}>/ 6</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>
-                      {assessmentResult.anxietyScore >= 3 ? '⚠️ Elevated Anxiety: Frequent autonomic worry' : '✓ Normal Anxiety Baseline'}
-                    </div>
+                {assessmentResult.subscales && assessmentResult.subscales.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${assessmentResult.subscales.length}, 1fr)`, gap: 10 }}>
+                    {assessmentResult.subscales.map((sub, i) => (
+                      <div key={i} style={{ background: C.bg, borderRadius: 14, padding: 14, border: `1px solid ${C.border}` }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>{sub.label}</span>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: C.ink, marginTop: 2 }}>
+                          {sub.score} <span style={{ fontSize: 12, color: C.soft }}>/ {sub.max}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: sub.status.includes('ALERT') ? C.urgent : C.soft, fontWeight: sub.status.includes('ALERT') ? 800 : 500, marginTop: 2 }}>
+                          {sub.status}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
-                  <div style={{ background: C.bg, borderRadius: 14, padding: 14, border: `1px solid ${C.border}` }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>Depression Subscale (PHQ-2)</span>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: C.ink, marginTop: 2 }}>
-                      {assessmentResult.depressionScore} <span style={{ fontSize: 12, color: C.soft }}>/ 6</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>
-                      {assessmentResult.depressionScore >= 3 ? '⚠️ Elevated Low Mood: Anhedonia & low energy' : '✓ Normal Mood Baseline'}
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 {/* Clinical Interpretation & Narrative */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1447,17 +1797,17 @@ export default function WellnessPage() {
                     onClick={() => setActiveView('counsellors')}
                     style={{ background: C.primary, color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                   >
-                    <CalendarCheck size={15} /> Book Free Session with Dr. Meera Nambiar
+                    <CalendarCheck size={15} /> Book Session with Dr. Meera Nambiar
                   </button>
 
                   <button
-                    onClick={() => setActiveView('grounding')}
+                    onClick={() => setActiveView('cbt')}
                     style={{ background: C.bg, color: C.ink, padding: '10px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: `1px solid ${C.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                   >
-                    <Compass size={15} /> Open 5-4-3-2-1 Somatic Drill
+                    <Sparkles size={15} /> Open CBT Thought Challenger
                   </button>
 
-                  {assessmentResult.totalScore >= 6 && (
+                  {assessmentResult.riskLevel === 'High' && (
                     <button
                       onClick={() => setActiveView('crisis')}
                       style={{ background: C.urgent, color: '#fff', padding: '10px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
