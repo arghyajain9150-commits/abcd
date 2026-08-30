@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { triageSymptoms, generateCBTReframe } from '../services/aiService.js';
+import { triageSymptoms, generateCBTReframe, analyzeWithMentaLLaMA } from '../services/aiService.js';
 import { evaluateSpatialOutbreaks } from '../services/outbreakEngine.js';
 import { aiLimiter } from '../middleware/rateLimiter.js';
 
@@ -36,6 +36,21 @@ router.post('/cbt-reframe', aiLimiter, async (req, res, next) => {
       evidenceFor,
       evidenceAgainst,
     });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/ai/mentallama-analyze - MentaLLaMA-7B Neural Cognitive Distortion Analyzer
+router.post('/mentallama-analyze', aiLimiter, async (req, res, next) => {
+  try {
+    const { text } = req.body;
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Text is required for MentaLLaMA analysis' });
+    }
+
+    const result = await analyzeWithMentaLLaMA({ text });
     res.json(result);
   } catch (err) {
     next(err);
