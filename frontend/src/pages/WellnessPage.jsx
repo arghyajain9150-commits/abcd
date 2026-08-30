@@ -4,7 +4,7 @@ import {
   HeartPulse, MessageSquare, Calendar, CheckSquare, Users, ShieldAlert,
   Sparkles, Send, Trash2, ArrowRight, CheckCircle2, Clock, Phone, AlertTriangle,
   Plus, X, ChevronRight, User, ThumbsUp, Flag, RefreshCw, Play, Pause, RotateCcw,
-  Check, CalendarCheck, ShieldCheck, MapPin, Search
+  Check, CalendarCheck, ShieldCheck, MapPin, Search, Wind, Award
 } from 'lucide-react';
 import { useAuthStore } from '../store/store.js';
 
@@ -22,16 +22,16 @@ const C = {
   bg: '#F5F7F3',
 };
 
-// ─── 5 Standard Moods ──────────────────────────────────────────────
+// ─── 5 Standard Moods with Clinical Campus Wellness Tips ──────────
 const MOOD_OPTIONS = [
-  { value: 'very_low', label: 'Very Low', emoji: '😞', color: '#FBE7E4', text: '#D6483C' },
-  { value: 'low',      label: 'Low',      emoji: '🙁', color: '#FFF4E5', text: '#B45309' },
-  { value: 'okay',     label: 'Okay',     emoji: '😐', color: '#F0F2EB', text: '#5B7169' },
-  { value: 'good',     label: 'Good',     emoji: '🙂', color: '#E4EFEA', text: '#2F7A68' },
-  { value: 'great',    label: 'Great',    emoji: '😄', color: '#D8F3E5', text: '#1B7A4B' },
+  { value: 'very_low', label: 'Very Low', emoji: '😞', color: '#FBE7E4', text: '#D6483C', advice: 'You are safe and not alone. Consider taking a pause or scheduling a confidential chat with our campus counsellor.' },
+  { value: 'low',      label: 'Low',      emoji: '🙁', color: '#FFF4E5', text: '#B45309', advice: 'Feeling depleted? Try our 2-minute 4-7-8 breathing reset below, hydrate with water, and take a 10-minute fresh air break.' },
+  { value: 'okay',     label: 'Okay',     emoji: '😐', color: '#F0F2EB', text: '#5B7169', advice: 'A steady baseline! Focus on one small academic priority and maintain regular hydration throughout classes.' },
+  { value: 'good',     label: 'Good',     emoji: '🙂', color: '#E4EFEA', text: '#2F7A68', advice: 'Great mindset! Take a brisk walk around the campus lawns or library quad to sustain this positive flow.' },
+  { value: 'great',    label: 'Great',    emoji: '😄', color: '#D8F3E5', text: '#1B7A4B', advice: 'Channel this vibrant energy into challenging study tasks, sports, or supporting a hostel peer.' },
 ];
 
-// ─── Verified Official Crisis Helplines (India & Campus) ───────────
+// ─── Verified Official Crisis Helplines ────────────────────────────
 const CRISIS_RESOURCES = [
   {
     name: 'Tele-MANAS (National Mental Health Helpline)',
@@ -109,7 +109,7 @@ const COUNSELLORS = [
   },
 ];
 
-// ─── Initial Anonymous Community Experiences ───────────────────────
+// ─── Initial Anonymous Community Reflections & Peer Initiatives ────
 const INITIAL_NOT_ALONE_POSTS = [
   {
     id: 101,
@@ -117,6 +117,7 @@ const INITIAL_NOT_ALONE_POSTS = [
     timestamp: '2 hours ago',
     relateCount: 38,
     userRelated: false,
+    category: 'Academic Stress',
   },
   {
     id: 102,
@@ -124,6 +125,7 @@ const INITIAL_NOT_ALONE_POSTS = [
     timestamp: '5 hours ago',
     relateCount: 52,
     userRelated: false,
+    category: 'Hostel Adjustment',
   },
   {
     id: 103,
@@ -131,6 +133,7 @@ const INITIAL_NOT_ALONE_POSTS = [
     timestamp: 'Yesterday',
     relateCount: 29,
     userRelated: false,
+    category: 'Self-Care',
   },
   {
     id: 104,
@@ -138,6 +141,46 @@ const INITIAL_NOT_ALONE_POSTS = [
     timestamp: '2 days ago',
     relateCount: 64,
     userRelated: false,
+    category: 'Support',
+  },
+];
+
+const INITIAL_PEER_TIPS = [
+  {
+    id: 1,
+    title: 'Hostel Block B Hydration & Electrolyte Hub',
+    author: 'Aarav S. (Block B Rm 204)',
+    category: 'Outbreak Prevention',
+    upvotes: 48,
+    upvoted: false,
+    text: 'During this flu and eye-infection season, we set up an ORS and clean paper napkin station near the Block B 2nd floor cooler. Please avoid shared towels!',
+  },
+  {
+    id: 2,
+    title: '20-20-20 Rule for Exam Season Screen Glare',
+    author: 'Priya M. (Biotech Dept)',
+    category: 'Eye Care & Study',
+    upvotes: 39,
+    upvoted: false,
+    text: 'Every 20 minutes of coding or studying, look at an object 20 feet away for 20 seconds. Drastically cuts down dry eye fatigue and headaches.',
+  },
+  {
+    id: 3,
+    title: 'Isolation Meal Buddy System for Sick Students',
+    author: 'Sidharth V. (Hostel Council)',
+    category: 'Community Support',
+    upvotes: 62,
+    upvoted: false,
+    text: 'If you are isolated with viral fever in your room, tag your room number in the hostel WhatsApp group. Volunteers will leave mess food trays outside your door.',
+  },
+  {
+    id: 4,
+    title: 'Late Night Herbal Chamomile Tea at Campus Canteen',
+    author: 'Rohan K. (Mechanical)',
+    category: 'Sleep Hygiene',
+    upvotes: 27,
+    upvoted: false,
+    text: 'Switching from high-caffeine energy drinks to chamomile tea after midnight helped me fix sleep latency during exam week.',
   },
 ];
 
@@ -145,7 +188,7 @@ export default function WellnessPage() {
   const user = useAuthStore((s) => s.user);
   const userId = user?.id || 'guest_user';
 
-  // Navigation tab: 'home' | 'ai_chat' | 'mood' | 'plan' | 'counsellors' | 'not_alone' | 'crisis'
+  // Navigation tab: 'home' | 'ai_chat' | 'mood' | 'plan' | 'counsellors' | 'breathing' | 'community' | 'crisis'
   const [activeTab, setActiveTab] = useState('home');
 
   // ─── 1. MOOD STATE ───────────────────────────────────────────────
@@ -160,7 +203,6 @@ export default function WellnessPage() {
     try {
       const saved = localStorage.getItem(`champ_mood_history_${userId}`);
       if (saved) return JSON.parse(saved);
-      // Default initial history
       return [
         { date: '2026-08-25', mood: 'okay', note: 'Normal class day' },
         { date: '2026-08-26', mood: 'low', note: 'Exhausted after lab submissions' },
@@ -182,7 +224,6 @@ export default function WellnessPage() {
     setTodayMood(newEntry);
     localStorage.setItem(`champ_mood_today_${userId}`, JSON.stringify(newEntry));
 
-    // Update history without duplicates for today
     const filtered = moodHistory.filter((m) => m.date !== todayStr);
     const updatedHistory = [newEntry, ...filtered];
     setMoodHistory(updatedHistory);
@@ -201,7 +242,49 @@ export default function WellnessPage() {
     localStorage.setItem(`champ_mood_history_${userId}`, JSON.stringify(updatedHistory));
   };
 
-  // ─── 2. TASKS & PLAN MY DAY STATE ────────────────────────────────
+  // ─── 2. 4-7-8 PARASYMPATHETIC BREATHING TOOL STATE ─────────────────
+  const [breathingActive, setBreathingActive] = useState(false);
+  const [breathPhase, setBreathPhase] = useState('Inhale'); // Inhale (4s), Hold (7s), Exhale (8s)
+  const [countdown, setCountdown] = useState(4);
+
+  useEffect(() => {
+    let timer;
+    if (breathingActive) {
+      timer = setInterval(() => {
+        setCountdown((c) => {
+          if (c > 1) return c - 1;
+
+          if (breathPhase === 'Inhale') {
+            setBreathPhase('Hold');
+            return 7;
+          } else if (breathPhase === 'Hold') {
+            setBreathPhase('Exhale');
+            return 8;
+          } else {
+            setBreathPhase('Inhale');
+            return 4;
+          }
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [breathingActive, breathPhase]);
+
+  const toggleBreathing = () => {
+    if (!breathingActive) {
+      setBreathPhase('Inhale');
+      setCountdown(4);
+    }
+    setBreathingActive(!breathingActive);
+  };
+
+  const resetBreathing = () => {
+    setBreathingActive(false);
+    setBreathPhase('Inhale');
+    setCountdown(4);
+  };
+
+  // ─── 3. TASKS & PLAN MY DAY STATE ────────────────────────────────
   const [tasks, setTasks] = useState(() => {
     try {
       const saved = localStorage.getItem(`champ_tasks_${userId}`);
@@ -218,8 +301,8 @@ export default function WellnessPage() {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState('medium');
   const [newTaskTime, setNewTaskTime] = useState('');
-  const [newTaskSection, setNewTaskSection] = useState('today'); // 'today' | 'upcoming'
-  const [taskFilter, setTaskFilter] = useState('all'); // 'all' | 'today' | 'upcoming' | 'completed'
+  const [newTaskSection, setNewTaskSection] = useState('today');
+  const [taskFilter, setTaskFilter] = useState('all');
 
   const saveTasks = (newTasks) => {
     setTasks(newTasks);
@@ -282,7 +365,7 @@ export default function WellnessPage() {
   const completedTaskCount = tasks.filter((t) => t.completed).length;
   const remainingTaskCount = tasks.filter((t) => !t.completed).length;
 
-  // ─── 3. COUNSELLOR BOOKINGS STATE ────────────────────────────────
+  // ─── 4. COUNSELLOR BOOKINGS STATE ────────────────────────────────
   const [counsellorBookings, setCounsellorBookings] = useState(() => {
     try {
       const saved = localStorage.getItem(`champ_counsellor_sessions_${userId}`);
@@ -329,7 +412,8 @@ export default function WellnessPage() {
 
   const nextCounsellorSession = counsellorBookings[0] || null;
 
-  // ─── 4. "YOU'RE NOT ALONE" COMMUNITY EXPERIENCES ─────────────────
+  // ─── 5. COMMUNITY & "YOU'RE NOT ALONE" PEER SUPPORT ──────────────
+  const [communitySubTab, setCommunitySubTab] = useState('solidarity'); // 'solidarity' | 'initiatives'
   const [notAlonePosts, setNotAlonePosts] = useState(() => {
     try {
       const saved = localStorage.getItem('champ_not_alone_posts');
@@ -337,9 +421,23 @@ export default function WellnessPage() {
       return INITIAL_NOT_ALONE_POSTS;
     } catch { return INITIAL_NOT_ALONE_POSTS; }
   });
+  const [peerTips, setPeerTips] = useState(() => {
+    try {
+      const saved = localStorage.getItem('champ_peer_tips');
+      if (saved) return JSON.parse(saved);
+      return INITIAL_PEER_TIPS;
+    } catch { return INITIAL_PEER_TIPS; }
+  });
+
   const [newPostText, setNewPostText] = useState('');
   const [postModalOpen, setPostModalOpen] = useState(false);
   const [postNotice, setPostNotice] = useState('');
+
+  // Share tip modal
+  const [tipModalOpen, setTipModalOpen] = useState(false);
+  const [newTipTitle, setNewTipTitle] = useState('');
+  const [newTipCategory, setNewTipCategory] = useState('Community Support');
+  const [newTipText, setNewTipText] = useState('');
 
   const handleRelate = (id) => {
     const updated = notAlonePosts.map((p) => {
@@ -356,6 +454,20 @@ export default function WellnessPage() {
     localStorage.setItem('champ_not_alone_posts', JSON.stringify(updated));
   };
 
+  const handleUpvoteTip = (id) => {
+    const updated = peerTips.map((t) =>
+      t.id === id
+        ? {
+            ...t,
+            upvotes: t.upvoted ? t.upvotes - 1 : t.upvotes + 1,
+            upvoted: !t.upvoted,
+          }
+        : t
+    );
+    setPeerTips(updated);
+    localStorage.setItem('champ_peer_tips', JSON.stringify(updated));
+  };
+
   const handleReportPost = (id) => {
     alert('Thank you. This post has been flagged for moderator review.');
   };
@@ -365,7 +477,6 @@ export default function WellnessPage() {
     const text = newPostText.trim();
     if (!text) return;
 
-    // Basic safety moderation / content filter
     const dangerousPatterns = [/suicide/i, /kill myself/i, /self[- ]?harm/i, /end my life/i];
     const isDangerous = dangerousPatterns.some((pattern) => pattern.test(text));
 
@@ -380,6 +491,7 @@ export default function WellnessPage() {
       timestamp: 'Just now',
       relateCount: 1,
       userRelated: true,
+      category: 'Student Reflection',
     };
     const updated = [newPost, ...notAlonePosts];
     setNotAlonePosts(updated);
@@ -389,7 +501,29 @@ export default function WellnessPage() {
     setPostModalOpen(false);
   };
 
-  // ─── 5. DEDICATED AI WELLNESS CHATBOT STATE ──────────────────────
+  const handleAddTip = (e) => {
+    e.preventDefault();
+    if (!newTipTitle.trim() || !newTipText.trim()) return;
+
+    const newTip = {
+      id: Date.now(),
+      title: newTipTitle.trim(),
+      author: 'You (Campus Student)',
+      category: newTipCategory,
+      upvotes: 1,
+      upvoted: true,
+      text: newTipText.trim(),
+    };
+
+    const updated = [newTip, ...peerTips];
+    setPeerTips(updated);
+    localStorage.setItem('champ_peer_tips', JSON.stringify(updated));
+    setNewTipTitle('');
+    setNewTipText('');
+    setTipModalOpen(false);
+  };
+
+  // ─── 6. DEDICATED AI WELLNESS CHATBOT STATE ──────────────────────
   const [chatMessages, setChatMessages] = useState([
     {
       role: 'assistant',
@@ -421,7 +555,6 @@ export default function WellnessPage() {
     if (!customText) setChatInput('');
     setAiTyping(true);
 
-    // Crisis check in AI conversation
     const lower = query.toLowerCase();
     const isCrisis = /suicide|kill myself|end it all|die|self harm|hurt myself|can't go on/.test(lower);
 
@@ -442,7 +575,7 @@ You can also tap the **"Crisis Support"** button above for instant 1-click calls
       } else if (/stress|exam|pressure|study|overwhelmed|assignment/.test(lower)) {
         aiResponseText = `It is completely natural to feel overwhelmed when academic demands pile up. Let's break this down into small, manageable steps:
 
-1. **Step away for 5 minutes:** Give your nervous system a brief pause. Try taking 3 slow, deep diaphragmatic breaths.
+1. **Step away for 5 minutes:** Give your nervous system a brief pause. Try our 2-minute 4-7-8 breathing exercise in the top tab.
 2. **Prioritize just ONE single task:** Don't try to solve the entire semester right now. Pick the smallest, lowest-friction item and spend 20 minutes on it.
 3. **Use our Plan My Day tool:** Group your tasks into 'Today' and 'Upcoming' so they don't occupy mental RAM.
 
@@ -452,7 +585,7 @@ Would you like to try a quick grounding exercise, or should we organize your pri
 
 Remember:
 • Be gentle with yourself—building meaningful connections takes time.
-• You can check our **"You're Not Alone"** section to see shared experiences from fellow students.
+• You can check our **"Community & Peer Support"** section to see shared experiences and hostel initiatives from fellow students.
 • Our campus counsellors (like Dr. Rajesh Sharma) frequently support students navigating hostel adjustments.
 
 I am right here with you. What has been making you feel most disconnected today?`;
@@ -461,7 +594,7 @@ I am right here with you. What has been making you feel most disconnected today?
 
 Remember that emotional wellbeing fluctuates day to day. Make sure you have had enough water today, take regular study breaks, and don't hesitate to reach out to campus resources if you need support.
 
-How can I help you best right now—organizing your day, discussing healthy coping strategies, or connecting you with a counsellor?`;
+How can I help you best right now—organizing your day, trying the 4-7-8 breathing exercise, or connecting you with a counsellor?`;
       }
 
       setChatMessages((prev) => [
@@ -490,19 +623,20 @@ How can I help you best right now—organizing your day, discussing healthy copi
 
   // ─── NAV ITEMS ───────────────────────────────────────────────────
   const NAV_ITEMS = [
-    { id: 'home',        label: 'Home',              Icon: HeartPulse },
-    { id: 'ai_chat',     label: 'AI Chat',           Icon: MessageSquare },
-    { id: 'mood',        label: 'Mood',              Icon: Sparkles },
-    { id: 'plan',        label: 'Plan My Day',       Icon: CheckSquare },
-    { id: 'counsellors', label: 'Counsellors',       Icon: User },
-    { id: 'not_alone',   label: "You're Not Alone",  Icon: Users },
-    { id: 'crisis',      label: 'Crisis Support',    Icon: ShieldAlert, highlight: true },
+    { id: 'home',        label: 'Home',                  Icon: HeartPulse },
+    { id: 'ai_chat',     label: 'AI Chat',               Icon: MessageSquare },
+    { id: 'mood',        label: 'Mood',                  Icon: Sparkles },
+    { id: 'plan',        label: 'Plan My Day',           Icon: CheckSquare },
+    { id: 'counsellors', label: 'Counsellors',           Icon: User },
+    { id: 'breathing',   label: '4-7-8 Reset',           Icon: Wind },
+    { id: 'community',   label: 'Community & Peer Hub',  Icon: Users },
+    { id: 'crisis',      label: 'Crisis Support',        Icon: ShieldAlert, highlight: true },
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       
-      {/* ─── Wellness Top Sub-Navigation Bar ─── */}
+      {/* ─── Wellness Sub-Navigation Bar ─── */}
       <div
         style={{
           display: 'flex',
@@ -606,44 +740,55 @@ How can I help you best right now—organizing your day, discussing healthy copi
               })}
             </div>
 
-            {/* Today's Selected Mood Feedback & Optional Note */}
+            {/* Active Mood Advice Banner & Note Form */}
             {todayMood && (
-              <form onSubmit={handleSaveMoodNote} style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                <input
-                  type="text"
-                  placeholder="Add an optional note (e.g. feeling relieved after submission)..."
-                  value={moodNote || todayMood.note || ''}
-                  onChange={(e) => setMoodNote(e.target.value)}
-                  style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    borderRadius: 10,
-                    border: `1px solid ${C.border}`,
-                    fontSize: 12,
-                    background: C.bg,
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  type="submit"
-                  style={{
-                    background: C.primary,
-                    color: '#fff',
-                    padding: '8px 14px',
-                    borderRadius: 10,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Save Note
-                </button>
-              </form>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {(() => {
+                  const match = MOOD_OPTIONS.find((m) => m.value === todayMood.mood);
+                  return (
+                    <div style={{ background: match?.color || C.primarySoft, borderRadius: 12, padding: '10px 14px', fontSize: 12, color: match?.text || C.primary, lineHeight: 1.4 }}>
+                      <strong>Campus Wellness Guidance:</strong> {match?.advice}
+                    </div>
+                  );
+                })()}
+
+                <form onSubmit={handleSaveMoodNote} style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    placeholder="Add an optional note (e.g. feeling relieved after lab submission)..."
+                    value={moodNote || todayMood.note || ''}
+                    onChange={(e) => setMoodNote(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      border: `1px solid ${C.border}`,
+                      fontSize: 12,
+                      background: C.bg,
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    style={{
+                      background: C.primary,
+                      color: '#fff',
+                      padding: '8px 14px',
+                      borderRadius: 10,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Save Note
+                  </button>
+                </form>
+              </div>
             )}
           </div>
 
-          {/* 2. Four Prominent Quick Actions */}
+          {/* 2. Prominent Quick Actions */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
             <button
               onClick={() => setActiveTab('ai_chat')}
@@ -740,6 +885,30 @@ How can I help you best right now—organizing your day, discussing healthy copi
                 <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>Tasks & schedule</div>
               </div>
             </button>
+
+            <button
+              onClick={() => setActiveTab('breathing')}
+              style={{
+                background: C.surface,
+                borderRadius: 16,
+                padding: '16px 14px',
+                border: `1px solid ${C.border}`,
+                textAlign: 'left',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+              }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#D8F3E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Wind size={18} color="#1B7A4B" />
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink }}>4-7-8 Reset</div>
+                <div style={{ fontSize: 11, color: C.soft, marginTop: 2 }}>Calming breath</div>
+              </div>
+            </button>
           </div>
 
           {/* 3. Today's Overview (3 Compact Cards) */}
@@ -749,7 +918,7 @@ How can I help you best right now—organizing your day, discussing healthy copi
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
-              {/* Card 1: Tasks */}
+              {/* Tasks Card */}
               <div style={{ background: C.surface, borderRadius: 16, padding: 16, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10 }}>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Today's Tasks</div>
@@ -766,7 +935,7 @@ How can I help you best right now—organizing your day, discussing healthy copi
                 </button>
               </div>
 
-              {/* Card 2: Mood */}
+              {/* Mood Card */}
               <div style={{ background: C.surface, borderRadius: 16, padding: 16, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10 }}>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Today's Mood</div>
@@ -793,7 +962,7 @@ How can I help you best right now—organizing your day, discussing healthy copi
                 </button>
               </div>
 
-              {/* Card 3: Upcoming Session */}
+              {/* Upcoming Session Card */}
               <div style={{ background: C.surface, borderRadius: 16, padding: 16, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 10 }}>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Upcoming Session</div>
@@ -816,19 +985,19 @@ How can I help you best right now—organizing your day, discussing healthy copi
             </div>
           </div>
 
-          {/* 4. "You're Not Alone" Section */}
+          {/* 4. Community Peer Support & Anonymous Reflection Preview */}
           <div style={{ background: C.surface, borderRadius: 20, padding: 18, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div className="champ-heading" style={{ fontSize: 16, fontWeight: 800, color: C.ink }}>
-                  You're Not Alone
+                  🤝 Campus Community & Peer Support
                 </div>
                 <div style={{ fontSize: 11.5, color: C.soft }}>
-                  Anonymous, supportive experiences from other students.
+                  Anonymous student reflections and upvoteable hostel health initiatives.
                 </div>
               </div>
               <button
-                onClick={() => setPostModalOpen(true)}
+                onClick={() => setActiveTab('community')}
                 style={{
                   background: C.primarySoft,
                   color: C.primary,
@@ -843,11 +1012,11 @@ How can I help you best right now—organizing your day, discussing healthy copi
                   cursor: 'pointer',
                 }}
               >
-                <Plus size={13} /> Share Anonymously
+                Open Hub →
               </button>
             </div>
 
-            {/* Preview of Top 2 Posts */}
+            {/* Preview of Top Post */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {notAlonePosts.slice(0, 2).map((post) => (
                 <div
@@ -866,53 +1035,28 @@ How can I help you best right now—organizing your day, discussing healthy copi
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
                     <span style={{ fontSize: 11, color: C.soft }}>Anonymous Student · {post.timestamp}</span>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button
-                        onClick={() => handleRelate(post.id)}
-                        style={{
-                          background: post.userRelated ? '#D8F3E5' : '#fff',
-                          color: post.userRelated ? '#1B7A4B' : C.ink,
-                          border: `1px solid ${C.border}`,
-                          padding: '3px 9px',
-                          borderRadius: 8,
-                          fontSize: 11,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        <ThumbsUp size={11} /> {post.relateCount} I relate
-                      </button>
-                      <button
-                        onClick={() => handleReportPost(post.id)}
-                        title="Report inappropriate content"
-                        style={{ background: '#fff', border: `1px solid ${C.border}`, padding: '3px 7px', borderRadius: 8, color: C.soft, cursor: 'pointer' }}
-                      >
-                        <Flag size={11} />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleRelate(post.id)}
+                      style={{
+                        background: post.userRelated ? '#D8F3E5' : '#fff',
+                        color: post.userRelated ? '#1B7A4B' : C.ink,
+                        border: `1px solid ${C.border}`,
+                        padding: '3px 9px',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      <ThumbsUp size={11} /> {post.relateCount} I relate
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
-
-            <button
-              onClick={() => setActiveTab('not_alone')}
-              style={{
-                alignSelf: 'center',
-                background: 'none',
-                border: 'none',
-                color: C.primary,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-                marginTop: 2,
-              }}
-            >
-              View all anonymous community posts →
-            </button>
           </div>
         </div>
       )}
@@ -923,7 +1067,7 @@ How can I help you best right now—organizing your day, discussing healthy copi
       {activeTab === 'ai_chat' && (
         <div style={{ background: C.surface, borderRadius: 20, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', height: 600, overflow: 'hidden' }}>
           
-          {/* Chat Header with Crisis Button */}
+          {/* Chat Header */}
           <div style={{ padding: '12px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: C.bg }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 34, height: 34, borderRadius: 10, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1077,7 +1221,7 @@ How can I help you best right now—organizing your day, discussing healthy copi
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 3: MOOD TRACKER & HISTORY
+          VIEW 3: MOOD TRACKER & TIMELINE
       ──────────────────────────────────────────────────────────────── */}
       {activeTab === 'mood' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1114,6 +1258,15 @@ How can I help you best right now—organizing your day, discussing healthy copi
                 );
               })}
             </div>
+
+            {todayMood && (() => {
+              const match = MOOD_OPTIONS.find((m) => m.value === todayMood.mood);
+              return (
+                <div style={{ background: match?.color || C.primarySoft, borderRadius: 12, padding: '10px 14px', fontSize: 12, color: match?.text || C.primary, lineHeight: 1.4 }}>
+                  <strong>Wellness Recommendation:</strong> {match?.advice}
+                </div>
+              );
+            })()}
 
             <form onSubmit={handleSaveMoodNote} style={{ display: 'flex', gap: 8 }}>
               <input
@@ -1650,109 +1803,331 @@ How can I help you best right now—organizing your day, discussing healthy copi
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 6: "YOU'RE NOT ALONE" COMMUNITY SUPPORT
+          VIEW 6: 4-7-8 PARASYMPATHETIC BREATHING RESET
       ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'not_alone' && (
+      {activeTab === 'breathing' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
+              borderRadius: 24,
+              padding: '30px 20px',
+              color: '#fff',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: 16,
+              boxShadow: '0 12px 36px -8px rgba(23,50,44,0.35)',
+            }}
+          >
             <div>
-              <div className="champ-heading" style={{ fontSize: 18, fontWeight: 800, color: C.ink }}>
-                You're Not Alone
+              <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A3D9C9' }}>
+                Guided Vagal Nerve Stimulation
               </div>
-              <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-                Anonymous peer reflections & solidarity from fellow students
+              <div className="champ-heading" style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>
+                4-7-8 Parasympathetic Breathing Reset
+              </div>
+              <div style={{ fontSize: 12.5, opacity: 0.88, marginTop: 4, maxWidth: 500 }}>
+                Inhale gently through your nose (4s) → Hold breath (7s) → Slow audible exhale (8s) to rapidly lower cortisol and heart rate.
               </div>
             </div>
 
-            <button
-              onClick={() => setPostModalOpen(true)}
+            {/* Interactive Expanding Breathing Sphere */}
+            <div
               style={{
-                background: C.primary,
-                color: '#fff',
-                padding: '7px 14px',
-                borderRadius: 10,
-                fontSize: 12,
-                fontWeight: 700,
-                border: 'none',
-                cursor: 'pointer',
+                width: 140,
+                height: 140,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.15)',
+                border: '2.5px solid rgba(255,255,255,0.4)',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                gap: 5,
+                justifyContent: 'center',
+                transform: breathingActive && breathPhase === 'Inhale' ? 'scale(1.25)' : breathingActive && breathPhase === 'Exhale' ? 'scale(0.85)' : 'scale(1)',
+                transition: 'transform 3s ease-in-out',
+                boxShadow: '0 0 30px rgba(255,255,255,0.15)',
               }}
             >
-              <Plus size={14} /> Share Anonymously
-            </button>
-          </div>
+              <span style={{ fontSize: 13, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#FFE699' }}>
+                {breathingActive ? breathPhase : 'Ready'}
+              </span>
+              <span style={{ fontSize: 32, fontWeight: 800, marginTop: 2 }}>
+                {breathingActive ? countdown : '4-7-8'}
+              </span>
+            </div>
 
-          {/* Guidelines Notice */}
-          <div style={{ background: C.bg, borderRadius: 14, padding: '10px 14px', fontSize: 11.5, color: C.soft, border: `1px solid ${C.border}` }}>
-            🔒 <strong>Safe Community Space:</strong> Strictly anonymous. No usernames or profiles. Filtered for constructive emotional solidarity.
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {notAlonePosts.map((post) => (
-              <div
-                key={post.id}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={toggleBreathing}
                 style={{
-                  background: C.surface,
-                  borderRadius: 16,
-                  padding: 16,
-                  border: `1px solid ${C.border}`,
+                  background: '#fff',
+                  color: C.primary,
+                  padding: '10px 24px',
+                  borderRadius: 12,
+                  fontSize: 13.5,
+                  fontWeight: 800,
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                  alignItems: 'center',
+                  gap: 6,
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 }}
               >
-                <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.5 }}>
-                  "{post.text}"
-                </div>
+                {breathingActive ? <Pause size={16} /> : <Play size={16} />}
+                {breathingActive ? 'Pause Exercise' : 'Start 2-Min Reset'}
+              </button>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
-                  <span style={{ fontSize: 11, color: C.soft }}>Anonymous Student · {post.timestamp}</span>
-
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      onClick={() => handleRelate(post.id)}
-                      style={{
-                        background: post.userRelated ? '#D8F3E5' : C.bg,
-                        color: post.userRelated ? '#1B7A4B' : C.ink,
-                        border: `1px solid ${post.userRelated ? '#1B7A4B' : C.border}`,
-                        padding: '5px 12px',
-                        borderRadius: 8,
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      <ThumbsUp size={12} /> {post.relateCount} I relate
-                    </button>
-
-                    <button
-                      onClick={() => handleReportPost(post.id)}
-                      title="Report"
-                      style={{ background: C.bg, border: `1px solid ${C.border}`, padding: '5px 9px', borderRadius: 8, color: C.soft, cursor: 'pointer' }}
-                    >
-                      <Flag size={12} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+              {breathingActive && (
+                <button
+                  onClick={resetBreathing}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    color: '#fff',
+                    padding: '10px 16px',
+                    borderRadius: 12,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <RotateCcw size={15} /> Reset
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {/* ────────────────────────────────────────────────────────────────
-          VIEW 7: CRISIS SUPPORT & EMERGENCY HELPLINES
+          VIEW 7: COMMUNITY & PEER SUPPORT HUB (SOLITARY + INITIATIVES)
+      ──────────────────────────────────────────────────────────────── */}
+      {activeTab === 'community' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div className="champ-heading" style={{ fontSize: 18, fontWeight: 800, color: C.ink }}>
+                Campus Peer Support & Solidarity Hub
+              </div>
+              <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
+                Anonymous peer reflections and student-led hostel wellness initiatives.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              {communitySubTab === 'solidarity' ? (
+                <button
+                  onClick={() => setPostModalOpen(true)}
+                  style={{
+                    background: C.primary,
+                    color: '#fff',
+                    padding: '7px 14px',
+                    borderRadius: 10,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  <Plus size={14} /> Share Anonymously
+                </button>
+              ) : (
+                <button
+                  onClick={() => setTipModalOpen(true)}
+                  style={{
+                    background: C.primary,
+                    color: '#fff',
+                    padding: '7px 14px',
+                    borderRadius: 10,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  <Plus size={14} /> Share Campus Tip +
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Sub-Tab Selector: Anonymous Reflections vs Hostel Initiatives */}
+          <div style={{ display: 'flex', background: C.border, borderRadius: 12, padding: 3 }}>
+            <button
+              onClick={() => setCommunitySubTab('solidarity')}
+              style={{
+                flex: 1,
+                padding: '8px 0',
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                background: communitySubTab === 'solidarity' ? '#fff' : 'transparent',
+                color: communitySubTab === 'solidarity' ? C.primary : C.soft,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              🤝 You're Not Alone ({notAlonePosts.length} Reflections)
+            </button>
+            <button
+              onClick={() => setCommunitySubTab('initiatives')}
+              style={{
+                flex: 1,
+                padding: '8px 0',
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                background: communitySubTab === 'initiatives' ? '#fff' : 'transparent',
+                color: communitySubTab === 'initiatives' ? C.primary : C.soft,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              💡 Hostel Initiatives & Tips ({peerTips.length})
+            </button>
+          </div>
+
+          {/* 1. Solidarity Feed */}
+          {communitySubTab === 'solidarity' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ background: C.bg, borderRadius: 12, padding: '10px 14px', fontSize: 11.5, color: C.soft, border: `1px solid ${C.border}` }}>
+                🔒 <strong>Strictly Anonymous:</strong> Zero usernames or profile links. Filtered for positive emotional connection.
+              </div>
+
+              {notAlonePosts.map((post) => (
+                <div
+                  key={post.id}
+                  style={{
+                    background: C.surface,
+                    borderRadius: 16,
+                    padding: 16,
+                    border: `1px solid ${C.border}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                  }}
+                >
+                  <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.5 }}>
+                    "{post.text}"
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+                    <span style={{ fontSize: 11, color: C.soft }}>Anonymous Student · {post.timestamp}</span>
+
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => handleRelate(post.id)}
+                        style={{
+                          background: post.userRelated ? '#D8F3E5' : C.bg,
+                          color: post.userRelated ? '#1B7A4B' : C.ink,
+                          border: `1px solid ${post.userRelated ? '#1B7A4B' : C.border}`,
+                          padding: '5px 12px',
+                          borderRadius: 8,
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <ThumbsUp size={12} /> {post.relateCount} I relate
+                      </button>
+
+                      <button
+                        onClick={() => handleReportPost(post.id)}
+                        title="Report"
+                        style={{ background: C.bg, border: `1px solid ${C.border}`, padding: '5px 9px', borderRadius: 8, color: C.soft, cursor: 'pointer' }}
+                      >
+                        <Flag size={12} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 2. Hostel Initiatives & Community Tips Feed */}
+          {communitySubTab === 'initiatives' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10 }}>
+              {peerTips.map((tip) => (
+                <div
+                  key={tip.id}
+                  style={{
+                    background: C.surface,
+                    borderRadius: 16,
+                    padding: 16,
+                    border: `1px solid ${C.border}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, background: C.primarySoft, color: C.primary, padding: '2px 8px', borderRadius: 99, textTransform: 'uppercase' }}>
+                        {tip.category}
+                      </span>
+                      <span style={{ fontSize: 10.5, color: C.soft }}>{tip.author}</span>
+                    </div>
+
+                    <div style={{ fontWeight: 800, fontSize: 13.5, color: C.ink, marginTop: 6 }}>
+                      {tip.title}
+                    </div>
+                    <div style={{ fontSize: 12, color: C.soft, marginTop: 4, lineHeight: 1.45 }}>
+                      "{tip.text}"
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${C.border}`, paddingTop: 8, marginTop: 2 }}>
+                    <span style={{ fontSize: 11, color: C.soft }}>Campus Verified</span>
+                    <button
+                      onClick={() => handleUpvoteTip(tip.id)}
+                      style={{
+                        background: tip.upvoted ? '#D8F3E5' : C.bg,
+                        color: tip.upvoted ? '#1B7A4B' : C.ink,
+                        border: `1px solid ${tip.upvoted ? '#1B7A4B' : C.border}`,
+                        padding: '4px 10px',
+                        borderRadius: 8,
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <ThumbsUp size={13} /> {tip.upvotes}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────
+          VIEW 8: CRISIS SUPPORT & EMERGENCY HELPLINES
       ──────────────────────────────────────────────────────────────── */}
       {activeTab === 'crisis' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          
-          {/* Urgent Support Banner */}
           <div
             style={{
               background: 'linear-gradient(135deg, #FFE8E5 0%, #FFD6D0 100%)',
@@ -1776,7 +2151,6 @@ How can I help you best right now—organizing your day, discussing healthy copi
             </div>
           </div>
 
-          {/* Verified Official Helplines */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {CRISIS_RESOURCES.map((res, i) => (
               <div
@@ -1832,15 +2206,10 @@ How can I help you best right now—organizing your day, discussing healthy copi
               </div>
             ))}
           </div>
-
-          {/* Safe Self-Care & Grounding Note */}
-          <div style={{ background: C.surface, borderRadius: 16, padding: 16, border: `1px solid ${C.border}`, fontSize: 12, color: C.soft, lineHeight: 1.4 }}>
-            💡 <strong>Grounding First Step:</strong> If you are feeling panicky, put both feet flat on the floor, take a slow drink of cold water, and tell a close friend, hostel roommate, or resident warden.
-          </div>
         </div>
       )}
 
-      {/* ─── MODAL: SHARE ANONYMOUS EXPERIENCE ─── */}
+      {/* ─── MODAL 1: SHARE ANONYMOUS REFLECTION ─── */}
       {postModalOpen && (
         <div
           style={{
@@ -1899,6 +2268,90 @@ How can I help you best right now—organizing your day, discussing healthy copi
                 style={{ background: C.primary, color: '#fff', padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
               >
                 Post Anonymously
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL 2: SHARE CAMPUS WELLNESS TIP ─── */}
+      {tipModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(23,50,44,0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 90,
+            padding: 16,
+          }}
+          onClick={() => setTipModalOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: 20,
+              width: '100%',
+              maxWidth: 460,
+              padding: 20,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: C.ink }}>Share a Campus Wellness Tip</div>
+              <button onClick={() => setTipModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={16} /></button>
+            </div>
+
+            <form onSubmit={handleAddTip} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Category</label>
+                <select
+                  value={newTipCategory}
+                  onChange={(e) => setNewTipCategory(e.target.value)}
+                  style={{ width: '100%', marginTop: 4, padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, background: '#fff' }}
+                >
+                  <option value="Outbreak Prevention">Outbreak Prevention & Hygiene</option>
+                  <option value="Community Support">Community Support & Buddy System</option>
+                  <option value="Eye Care & Study">Eye Care & Study Ergonomics</option>
+                  <option value="Sleep Hygiene">Sleep Hygiene & Nutrition</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Tip Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Setting up hostel washroom sanitizers"
+                  value={newTipTitle}
+                  onChange={(e) => setNewTipTitle(e.target.value)}
+                  required
+                  style={{ width: '100%', marginTop: 4, padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Details / Explanation</label>
+                <textarea
+                  rows={3}
+                  placeholder="Explain how this tip helped you or your hostel peers..."
+                  value={newTipText}
+                  onChange={(e) => setNewTipText(e.target.value)}
+                  required
+                  style={{ width: '100%', marginTop: 4, padding: '8px 10px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, resize: 'none' }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                style={{ background: C.primary, color: '#fff', padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', marginTop: 4 }}
+              >
+                Post to Campus Peer Hub
               </button>
             </form>
           </div>
