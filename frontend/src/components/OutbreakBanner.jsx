@@ -76,6 +76,8 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
     );
   }
 
+  const isCritical = outbreakConfig?.severity === 'critical' || outbreakConfig?.severity === 'high';
+
   return (
     <>
       <div
