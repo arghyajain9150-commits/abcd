@@ -83,7 +83,7 @@ export default function AppShell() {
   return (
     <div className="app-viewport-wrapper">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
         .champ-heading { font-family: 'Space Grotesk', sans-serif; }
         button { font-family: inherit; cursor: pointer; border: none; background: none; }
@@ -98,53 +98,72 @@ export default function AppShell() {
         
         .app-viewport-wrapper {
           min-height: 100vh;
-          background: ${C.bg};
+          width: 100%;
+          background: #F4F6F2;
           display: flex;
-          align-items: center;
-          justifyContent: center;
-          padding: 16px 12px;
+          flex-direction: column;
           font-family: 'Inter', sans-serif;
         }
 
         .app-shell-container {
           width: 100%;
-          max-width: 440px;
-          height: 94vh;
-          max-height: 860px;
-          background: ${C.frame};
-          border-radius: 28px;
-          box-shadow: 0 20px 60px -20px rgba(23,50,44,0.35);
-          border: 1px solid ${C.border};
+          max-width: 1360px;
+          margin: 0 auto;
+          min-height: 100vh;
+          background: #FFFFFF;
           display: flex;
           flex-direction: column;
           position: relative;
-          overflow: hidden;
+          box-shadow: 0 0 45px rgba(23,50,44,0.05);
+          border-left: 1px solid #E5E7DF;
+          border-right: 1px solid #E5E7DF;
         }
 
         .content-scroll {
           flex: 1;
-          overflow-y: auto;
-          padding: 16px 18px 80px;
+          width: 100%;
+          padding: 16px 16px 88px;
         }
         .content-scroll::-webkit-scrollbar { width: 6px; }
         .content-scroll::-webkit-scrollbar-thumb { background: #C8D1CC; border-radius: 6px; }
 
         .desktop-header-nav { display: none; }
-        .mobile-bottom-nav { display: flex; }
+        .mobile-bottom-nav {
+          display: flex;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: rgba(255,255,255,0.96);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-top: 1px solid #E1E3DA;
+          padding: 6px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+          justify-content: space-around;
+          align-items: center;
+          z-index: 100;
+          box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
+        }
 
-        /* ── Desktop Breakpoint (>= 768px) ── */
-        @media (min-width: 768px) {
-          .app-viewport-wrapper {
-            padding: 24px 20px;
-            align-items: flex-start;
-          }
-          .app-shell-container {
-            max-width: 1160px;
-            height: auto;
-            min-height: 90vh;
-            max-height: none;
-            border-radius: 24px;
-            box-shadow: 0 24px 80px -15px rgba(23,50,44,0.2);
+        .emergency-fab {
+          position: fixed;
+          right: 18px;
+          bottom: 76px;
+          width: 52px;
+          height: 52px;
+          border-radius: 50%;
+          background: #D6483C;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 8px 24px -4px rgba(214,72,60,0.6);
+          z-index: 95;
+        }
+
+        /* ── Tablet & Desktop Breakpoint (>= 860px) ── */
+        @media (min-width: 860px) {
+          .content-scroll {
+            padding: 24px 32px 48px;
           }
           .mobile-bottom-nav {
             display: none !important;
@@ -152,13 +171,31 @@ export default function AppShell() {
           .desktop-header-nav {
             display: flex !important;
           }
+          .emergency-fab {
+            bottom: 28px !important;
+            right: 28px !important;
+          }
+        }
+
+        /* ── Mobile Landscape Breakpoint ── */
+        @media (max-height: 560px) and (orientation: landscape) {
+          .top-header-bar {
+            padding: 8px 16px 6px !important;
+          }
           .content-scroll {
-            padding: 20px 28px 36px;
-            overflow-y: visible;
+            padding: 12px 16px 64px !important;
+          }
+          .mobile-bottom-nav {
+            padding: 4px 8px !important;
+          }
+          .mobile-bottom-nav button {
+            padding: 2px 6px !important;
           }
           .emergency-fab {
-            bottom: 24px !important;
-            right: 28px !important;
+            bottom: 58px !important;
+            right: 14px !important;
+            width: 44px !important;
+            height: 44px !important;
           }
         }
       `}</style>
@@ -173,11 +210,13 @@ export default function AppShell() {
           </div>
         )}
 
-        {/* ─── Top Header with Brand & Demo Role Switcher ─── */}
-        <div style={{ padding: '16px 22px 12px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* ─── Top Header with Brand, Nav & Demo Role Switcher ─── */}
+        <div className="top-header-bar" style={{ padding: '16px 24px 12px', display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0, background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 80 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            
+            {/* Brand Logo & Title */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 20, boxShadow: '0 4px 12px rgba(47,122,104,0.25)' }}>
                 +
               </div>
               <div>
@@ -192,7 +231,7 @@ export default function AppShell() {
 
             {/* Desktop Navigation Links (For Student View) */}
             {activePersona === 'student' && (
-              <div className="desktop-header-nav" style={{ display: 'flex', gap: 6, background: C.bg, padding: '4px 6px', borderRadius: 14 }}>
+              <div className="desktop-header-nav" style={{ display: 'flex', gap: 4, background: C.bg, padding: '4px 6px', borderRadius: 14, border: `1px solid ${C.border}` }}>
                 {STUDENT_NAV.map(({ path, label, Icon }) => {
                   const isActive = location.pathname === path;
                   return (
@@ -203,7 +242,7 @@ export default function AppShell() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 6,
-                        padding: '6px 14px',
+                        padding: '6px 12px',
                         borderRadius: 10,
                         fontSize: 12.5,
                         fontWeight: 700,
@@ -212,7 +251,7 @@ export default function AppShell() {
                         transition: 'all 0.15s ease',
                       }}
                     >
-                      <Icon size={15} />
+                      <Icon size={14} />
                       <span>{label}</span>
                     </button>
                   );
@@ -228,7 +267,7 @@ export default function AppShell() {
                   onClick={() => setProfileOpen(true)}
                   title="My Medical Profile & Health ID"
                   style={{
-                    padding: '6px 11px',
+                    padding: '7px 12px',
                     borderRadius: 10,
                     background: C.primarySoft,
                     border: `1px solid ${C.primary}`,
@@ -238,6 +277,7 @@ export default function AppShell() {
                     fontSize: 12,
                     fontWeight: 700,
                     color: C.primary,
+                    transition: 'transform 0.15s ease',
                   }}
                 >
                   <CreditCard size={14} />
@@ -250,7 +290,7 @@ export default function AppShell() {
                 onClick={() => handleOpenAI()}
                 title="Gemini AI Health Assistant"
                 style={{
-                  padding: '6px 12px',
+                  padding: '7px 14px',
                   borderRadius: 10,
                   background: 'linear-gradient(135deg, #17322C 0%, #2F7A68 100%)',
                   display: 'flex',
@@ -259,6 +299,7 @@ export default function AppShell() {
                   fontSize: 12,
                   fontWeight: 700,
                   color: '#fff',
+                  boxShadow: '0 4px 12px rgba(23,50,44,0.2)',
                 }}
               >
                 <Sparkles size={14} color="#FFE699" />
@@ -269,7 +310,7 @@ export default function AppShell() {
               <button
                 onClick={() => setNotifOpen(true)}
                 title="Notifications"
-                style={{ position: 'relative', width: 34, height: 34, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
+                style={{ position: 'relative', width: 36, height: 36, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
               >
                 <Bell size={16} color={hasAlert ? C.urgent : C.ink} />
                 {hasAlert && (
@@ -283,7 +324,7 @@ export default function AppShell() {
               <button
                 onClick={logout}
                 title="Log out"
-                style={{ width: 34, height: 34, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
+                style={{ width: 36, height: 36, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${C.border}` }}
               >
                 <LogOut size={15} color={C.soft} />
               </button>
@@ -291,7 +332,7 @@ export default function AppShell() {
           </div>
 
           {/* Persona Switcher Bar for Hackathon Demo */}
-          <div style={{ display: 'flex', background: C.bg, borderRadius: 12, padding: 3, gap: 4 }}>
+          <div style={{ display: 'flex', background: C.bg, borderRadius: 12, padding: 3, gap: 4, border: `1px solid ${C.border}` }}>
             <button
               onClick={() => { setActivePersona('student'); navigate('/'); }}
               style={{
@@ -303,6 +344,7 @@ export default function AppShell() {
                 background: activePersona === 'student' ? '#fff' : 'transparent',
                 color: activePersona === 'student' ? C.primary : C.soft,
                 boxShadow: activePersona === 'student' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                transition: 'all 0.15s ease',
               }}
             >
               🎓 Student Portal
@@ -318,6 +360,7 @@ export default function AppShell() {
                 background: activePersona === 'doctor' ? '#fff' : 'transparent',
                 color: activePersona === 'doctor' ? C.primary : C.soft,
                 boxShadow: activePersona === 'doctor' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                transition: 'all 0.15s ease',
               }}
             >
               🩺 Doctor Desk
@@ -333,6 +376,7 @@ export default function AppShell() {
                 background: activePersona === 'pharmacist' ? '#fff' : 'transparent',
                 color: activePersona === 'pharmacist' ? C.primary : C.soft,
                 boxShadow: activePersona === 'pharmacist' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                transition: 'all 0.15s ease',
               }}
             >
               💊 Pharmacy Dispensary
@@ -348,36 +392,23 @@ export default function AppShell() {
               <button
                 onClick={() => navigate(-1)}
                 style={{
-                  display: 'inline-flex',
+                  display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  background: C.surface,
-                  border: `1.5px solid ${C.border}`,
-                  padding: '6px 14px',
-                  borderRadius: 10,
-                  fontSize: 12.5,
+                  color: C.primary,
+                  fontSize: 13,
                   fontWeight: 700,
-                  color: C.ink,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-                  transition: 'all 0.15s ease',
+                  background: C.primarySoft,
+                  padding: '6px 12px',
+                  borderRadius: 10,
+                  border: `1px solid ${C.primary}33`,
                 }}
               >
-                <ArrowLeft size={14} color={C.primary} />
+                <ChevronLeft size={16} />
                 <span>Back</span>
               </button>
-
-              <div style={{ fontSize: 11.5, color: C.soft, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button
-                  onClick={() => navigate('/')}
-                  style={{ background: 'none', border: 'none', color: C.soft, cursor: 'pointer', padding: 0, fontWeight: 600 }}
-                >
-                  Home
-                </button>
-                <span>/</span>
-                <span style={{ color: C.primary, fontWeight: 700, textTransform: 'capitalize' }}>
-                  {location.pathname.replace('/', '').replace('-', ' ')}
-                </span>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: C.soft, textTransform: 'capitalize' }}>
+                {location.pathname.replace('/', '').replace('-', ' ') || 'Overview'}
               </div>
             </div>
           )}
@@ -398,30 +429,15 @@ export default function AppShell() {
           <button
             onClick={() => setEmergencyOpen(true)}
             className="emergency-fab"
-            title="Emergency Help"
-            style={{ position: 'fixed', right: 20, bottom: 80, width: 52, height: 52, borderRadius: '50%', background: C.urgent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px -4px rgba(214,72,60,0.6)', zIndex: 50 }}
+            title="24/7 Emergency Medical Response"
           >
-            <ShieldAlert size={22} color="#fff" />
+            <ShieldAlert size={24} color="#fff" />
           </button>
         )}
 
         {/* ─── Bottom Navigation (Mobile View Only) ─── */}
         {activePersona === 'student' && (
-          <nav
-            className="mobile-bottom-nav"
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: C.surface,
-              borderTop: `1px solid ${C.border}`,
-              padding: '6px 8px 8px',
-              justifyContent: 'space-around',
-              alignItems: 'center',
-              zIndex: 20,
-            }}
-          >
+          <nav className="mobile-bottom-nav">
             {STUDENT_NAV.map(({ path, label, Icon }) => {
               const isActive = location.pathname === path;
               return (
@@ -433,15 +449,16 @@ export default function AppShell() {
                     flexDirection: 'column',
                     alignItems: 'center',
                     gap: 3,
-                    padding: '4px 10px',
-                    borderRadius: 12,
+                    padding: '4px 8px',
+                    borderRadius: 10,
                     background: isActive ? C.primarySoft : 'transparent',
                     color: isActive ? C.primary : C.soft,
                     transition: 'all 0.15s ease',
+                    minWidth: 48,
                   }}
                 >
                   <Icon size={18} strokeWidth={isActive ? 2.5 : 1.8} />
-                  <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500 }}>{label}</span>
+                  <span style={{ fontSize: 10, fontWeight: isActive ? 800 : 500 }}>{label}</span>
                 </button>
               );
             })}
