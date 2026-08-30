@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Sparkles, ChevronRight, Radio, MapPin, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Sparkles, ChevronRight, Radio, MapPin, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { getOutbreakAlerts } from '../api/index.js';
+import { useOutbreakStore } from '../store/store.js';
 import CampusRadarModal from './CampusRadarModal.jsx';
 import OutbreakForecastModal from './OutbreakForecastModal.jsx';
 
@@ -20,6 +21,8 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
   const [radarOpen, setRadarOpen] = useState(false);
   const [forecastOpen, setForecastOpen] = useState(false);
 
+  const outbreakConfig = useOutbreakStore((s) => s.config);
+
   const { data: alerts = [] } = useQuery({
     queryKey: ['outbreak-alerts'],
     queryFn: () => getOutbreakAlerts().then((r) => r.data),
@@ -27,9 +30,51 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
   });
 
   const activeAlert = alerts[0];
-  if (!activeAlert) return null;
+  const isOutbreakActive = outbreakConfig?.active && outbreakConfig?.severity !== 'resolved';
+  const diseaseName = outbreakConfig?.diseaseName || activeAlert?.disease_name || 'Viral Conjunctivitis (Eye Flu)';
+  const activeCases = outbreakConfig?.activeCases || activeAlert?.active_cases || 7;
+  const advisory = outbreakConfig?.clinicalAdvisory || activeAlert?.advisory || 'Mandatory isolation for infected students.';
+  const r0 = outbreakConfig?.r0 || 1.84;
+  const affectedBlocks = outbreakConfig?.affectedBlocks || ['Hostel Block B', 'Hostel Block C'];
 
-  const isCritical = activeAlert.severity === 'critical';
+  if (!isOutbreakActive) {
+    return (
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #E4EFEA 0%, #D5E8DF 100%)',
+          border: `1.5px solid ${C.primary}`,
+          borderRadius: 18,
+          padding: '12px 16px',
+          marginBottom: 16,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          boxShadow: '0 2px 8px rgba(47,122,104,0.1)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: C.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CheckCircle2 size={16} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 13, color: C.ink }}>
+              Campus Health Status: Normal Baseline
+            </div>
+            <div style={{ fontSize: 11, color: C.soft }}>
+              0 active viral clusters detected · Doctor Epidemiological Surveillance Active (R₀ &lt; 1.0)
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setRadarOpen(true)}
+          style={{ background: '#fff', border: `1px solid ${C.primary}`, color: C.primary, padding: '5px 12px', borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+        >
+          <Radio size={12} /> View Radar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -72,7 +117,7 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
                 letterSpacing: '0.06em',
               }}
             >
-              Active Campus Alert ({activeAlert.active_cases || 7} Cases)
+              Active Campus Alert ({activeCases} Cases · R₀: {r0})
             </span>
           </div>
 
@@ -118,17 +163,29 @@ export default function OutbreakBanner({ onOpenAI, onBook }) {
         </div>
 
         <div style={{ fontWeight: 800, fontSize: 14, color: C.ink, lineHeight: 1.3 }}>
-          {activeAlert.disease_name}
+          {diseaseName}
         </div>
 
         <div style={{ fontSize: 12, color: C.ink, lineHeight: 1.4 }}>
-          {activeAlert.advisory}
+          {advisory}
         </div>
+
+        {/* Affected Blocks Tags */}
+        {affectedBlocks && affectedBlocks.length > 0 && (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: C.urgent }}>Targeted Zones:</span>
+            {affectedBlocks.map((b) => (
+              <span key={b} style={{ background: '#fff', color: C.ink, border: '1px solid #F5C6BA', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4 }}>
+                {b}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Action buttons */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 6, marginTop: 4 }}>
           <button
-            onClick={() => onOpenAI(activeAlert.disease_name)}
+            onClick={() => onOpenAI(diseaseName)}
             style={{
               background: '#fff',
               border: '1px solid #F5C6BA',

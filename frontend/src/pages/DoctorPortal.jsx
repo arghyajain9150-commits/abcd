@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Stethoscope, Calendar, Clock, User, CheckCircle2, Plus, Phone, FileText, Pill, History, AlertTriangle, ChevronDown, Check, Building, Radio } from 'lucide-react';
+import { Stethoscope, Calendar, Clock, User, CheckCircle2, Plus, Phone, FileText, Pill, History, AlertTriangle, ChevronDown, Check, Building, Radio, ShieldAlert, Sliders, Activity, Send, Zap, TrendingUp, Save, RefreshCw } from 'lucide-react';
 import { getDoctorQueue, createDoctorSlots, updateAppointmentStatus, getDoctors } from '../api/index.js';
+import { useOutbreakStore } from '../store/store.js';
 import PrescriptionWriterModal from '../components/PrescriptionWriterModal.jsx';
 import StudentHistoryModal from '../components/StudentHistoryModal.jsx';
 
@@ -21,14 +22,77 @@ const C = {
 
 const DEFAULT_SLOTS = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00', '15:30', '16:00'];
 
+const DISEASE_PRESETS = [
+  {
+    key: 'conjunctivitis',
+    name: 'Viral Conjunctivitis (Eye Flu)',
+    category: 'Contact & Droplet Transmission',
+    r0: 1.84,
+    incubationDays: 2,
+    infectiousDays: 6,
+    isolationDays: 5,
+    advisory: 'Mandatory isolation for infected students. Frequent eye washes with sterile saline, avoid touching eyes, and wear protective tinted glasses.',
+  },
+  {
+    key: 'gastroenteritis',
+    name: 'Viral Gastroenteritis / Norovirus',
+    category: 'Mess Water & Foodborne Contagion',
+    r0: 2.40,
+    incubationDays: 1,
+    infectiousDays: 4,
+    isolationDays: 3,
+    advisory: 'Drink only RO filtered or boiled water; avoid hostel cooler tap water. Collect free electrolyte ORS sachets from dispensary.',
+  },
+  {
+    key: 'influenza',
+    name: 'Influenza A (H3N2 Viral Flu)',
+    category: 'Airborne Droplet Transmission',
+    r0: 1.65,
+    incubationDays: 3,
+    infectiousDays: 7,
+    isolationDays: 6,
+    advisory: 'Wear surgical/N95 masks in hostel corridors and mess halls. Keep windows open for natural ventilation and report high fevers.',
+  },
+  {
+    key: 'chickenpox',
+    name: 'Varicella (Chickenpox / Viral Rash)',
+    category: 'Airborne & Direct Blister Contact',
+    r0: 10.5,
+    incubationDays: 14,
+    infectiousDays: 10,
+    isolationDays: 12,
+    advisory: 'Mandatory 12-day medical isolation in quarantine wing until all skin blisters have crusted. Oral antivirals delivered by medical team.',
+  },
+  {
+    key: 'dengue',
+    name: 'Dengue / Vector-Borne Viral Fever',
+    category: 'Aedes Mosquito Vector',
+    r0: 1.25,
+    incubationDays: 5,
+    infectiousDays: 7,
+    isolationDays: 4,
+    advisory: 'Campus estate fogging active around hostel perimeter. Apply mosquito repellent lotion and eliminate stagnant water in cooler trays.',
+  },
+];
+
 export default function DoctorPortal() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState('queue'); // 'queue' | 'schedule'
+  const [tab, setTab] = useState('queue'); // 'queue' | 'schedule' | 'radar'
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [historyStudent, setHistoryStudent] = useState(null);
   const [slotDate, setSlotDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTimes, setSelectedTimes] = useState(DEFAULT_SLOTS);
   const [rxWriterOpen, setRxWriterOpen] = useState(false);
+
+  // Outbreak Radar State from useOutbreakStore
+  const outbreakConfig = useOutbreakStore((s) => s.config);
+  const updateOutbreakConfig = useOutbreakStore((s) => s.updateConfig);
+  const [radarForm, setRadarForm] = useState(outbreakConfig);
+  const [broadcastNotice, setBroadcastNotice] = useState('');
+
+  useEffect(() => {
+    setRadarForm(outbreakConfig);
+  }, [outbreakConfig]);
 
   // 1. Fetch all campus doctors with strict deduplication
   const { data: rawDoctors = [] } = useQuery({
@@ -581,6 +645,252 @@ export default function DoctorPortal() {
               >
                 {addingSlots ? 'Publishing Slots…' : `Publish ${selectedTimes.length} Slots for ${activeDoctor?.name}`}
               </button>
+            </div>
+          )}
+
+          {/* TAB 3: Doctor Epidemiological Outbreak Radar Control */}
+          {tab === 'radar' && (
+            <div style={{ background: C.surface, borderRadius: 20, padding: 20, border: `1.5px solid ${radarForm.active ? '#F5A9A0' : C.border}`, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+              
+              {/* Radar Status Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <ShieldAlert size={20} color={radarForm.active ? C.urgent : C.primary} />
+                    <div className="champ-heading" style={{ fontSize: 17, fontWeight: 800, color: C.ink }}>
+                      Epidemiological Radar & Outbreak Control
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
+                    Configure transmission dynamics (SORMAS & WHO EWARS standard) and broadcast live campus alerts.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...radarForm, active: !radarForm.active, severity: !radarForm.active ? 'high' : 'resolved' };
+                      setRadarForm(updated);
+                      updateOutbreakConfig(updated);
+                      setBroadcastNotice(updated.active ? 'Outbreak Alert is now LIVE across student portals!' : 'Outbreak resolved. Campus status normalized.');
+                    }}
+                    style={{
+                      background: radarForm.active ? '#FFE8E5' : '#D8F3E5',
+                      color: radarForm.active ? C.urgent : '#1B7A4B',
+                      border: `1.5px solid ${radarForm.active ? C.urgent : '#1B7A4B'}`,
+                      padding: '7px 14px',
+                      borderRadius: 10,
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {radarForm.active ? '🔴 Outbreak Active (Broadcasting)' : '🟢 Outbreak Resolved (Normal)'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Pathogen Preset Dropdown */}
+              <div style={{ background: C.bg, borderRadius: 14, padding: 14, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>
+                  1. Select Clinical Pathogen Profile
+                </label>
+
+                <select
+                  value={radarForm.diseaseKey || 'conjunctivitis'}
+                  onChange={(e) => {
+                    const selectedKey = e.target.value;
+                    const preset = DISEASE_PRESETS.find((p) => p.key === selectedKey);
+                    if (preset) {
+                      setRadarForm({
+                        ...radarForm,
+                        diseaseKey: preset.key,
+                        diseaseName: preset.name,
+                        category: preset.category,
+                        r0: preset.r0,
+                        incubationDays: preset.incubationDays,
+                        infectiousDays: preset.infectiousDays,
+                        isolationDays: preset.isolationDays,
+                        clinicalAdvisory: preset.advisory,
+                      });
+                    }
+                  }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${C.border}`, fontSize: 13, fontWeight: 700, background: '#fff' }}
+                >
+                  {DISEASE_PRESETS.map((p) => (
+                    <option key={p.key} value={p.key}>
+                      {p.name} — {p.category} (R₀: {p.r0})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Epidemiological Tuning Sliders (R0, Incubation, Shedding, Isolation) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                
+                {/* R0 Contagiousness Slider */}
+                <div style={{ background: C.bg, borderRadius: 14, padding: 12, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 800, color: C.urgent, textTransform: 'uppercase' }}>Contagiousness (R₀)</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: C.urgent }}>{radarForm.r0}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="5.0"
+                    step="0.05"
+                    value={radarForm.r0}
+                    onChange={(e) => setRadarForm({ ...radarForm, r0: parseFloat(e.target.value) })}
+                    style={{ width: '100%', accentColor: C.urgent }}
+                  />
+                  <span style={{ fontSize: 10, color: C.soft }}>Expected secondary cases per patient</span>
+                </div>
+
+                {/* Incubation Days */}
+                <div style={{ background: C.bg, borderRadius: 14, padding: 12, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>Incubation Period</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: C.ink }}>{radarForm.incubationDays} Days</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="14"
+                    step="1"
+                    value={radarForm.incubationDays}
+                    onChange={(e) => setRadarForm({ ...radarForm, incubationDays: parseInt(e.target.value) })}
+                    style={{ width: '100%', accentColor: C.primary }}
+                  />
+                  <span style={{ fontSize: 10, color: C.soft }}>Exposure to symptom onset</span>
+                </div>
+
+                {/* Infectious Shedding Window */}
+                <div style={{ background: C.bg, borderRadius: 14, padding: 12, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 800, color: C.accent, textTransform: 'uppercase' }}>Infectious Window</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: C.ink }}>{radarForm.infectiousDays} Days</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="14"
+                    step="1"
+                    value={radarForm.infectiousDays}
+                    onChange={(e) => setRadarForm({ ...radarForm, infectiousDays: parseInt(e.target.value) })}
+                    style={{ width: '100%', accentColor: C.accent }}
+                  />
+                  <span style={{ fontSize: 10, color: C.soft }}>Active viral shedding duration</span>
+                </div>
+
+                {/* Mandatory Isolation Days */}
+                <div style={{ background: C.bg, borderRadius: 14, padding: 12, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1B7A4B', textTransform: 'uppercase' }}>Isolation Leave</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: '#1B7A4B' }}>{radarForm.isolationDays} Days</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="14"
+                    step="1"
+                    value={radarForm.isolationDays}
+                    onChange={(e) => setRadarForm({ ...radarForm, isolationDays: parseInt(e.target.value) })}
+                    style={{ width: '100%', accentColor: '#1B7A4B' }}
+                  />
+                  <span style={{ fontSize: 10, color: C.soft }}>Mandatory leave protocol</span>
+                </div>
+              </div>
+
+              {/* Active Clinical Cases & Affected Hostel Blocks */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 800, color: C.soft, textTransform: 'uppercase' }}>Active Cases Count</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="200"
+                    value={radarForm.activeCases || 7}
+                    onChange={(e) => setRadarForm({ ...radarForm, activeCases: parseInt(e.target.value) || 1 })}
+                    style={{ width: '100%', marginTop: 4, padding: '9px 12px', borderRadius: 10, border: `1.5px solid ${C.border}`, fontSize: 14, fontWeight: 800 }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 800, color: C.soft, textTransform: 'uppercase' }}>Affected Hostel Blocks</label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                    {['Hostel Block A', 'Hostel Block B', 'Hostel Block C', 'PG Wing', 'Mess Hall 1'].map((block) => {
+                      const isSelected = (radarForm.affectedBlocks || []).includes(block);
+                      return (
+                        <button
+                          key={block}
+                          type="button"
+                          onClick={() => {
+                            const cur = radarForm.affectedBlocks || [];
+                            const updated = isSelected ? cur.filter((b) => b !== block) : [...cur, block];
+                            setRadarForm({ ...radarForm, affectedBlocks: updated });
+                          }}
+                          style={{
+                            background: isSelected ? C.urgent : C.bg,
+                            color: isSelected ? '#fff' : C.ink,
+                            border: `1px solid ${isSelected ? C.urgent : C.border}`,
+                            padding: '6px 10px',
+                            borderRadius: 8,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {isSelected ? '✓ ' : '+ '}{block}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Doctor's Public Health Advisory */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 800, color: C.soft, textTransform: 'uppercase' }}>Doctor's Official Campus Advisory</label>
+                <textarea
+                  rows={3}
+                  value={radarForm.clinicalAdvisory}
+                  onChange={(e) => setRadarForm({ ...radarForm, clinicalAdvisory: e.target.value })}
+                  style={{ width: '100%', marginTop: 4, padding: '10px 12px', borderRadius: 10, border: `1.5px solid ${C.border}`, fontSize: 12.5, resize: 'none' }}
+                />
+              </div>
+
+              {/* Broadcast Action Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+                <span style={{ fontSize: 12, color: C.primary, fontWeight: 700 }}>
+                  {broadcastNotice || `Last updated: ${outbreakConfig.lastUpdated || 'Just now'}`}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateOutbreakConfig(radarForm);
+                    setBroadcastNotice('✓ Outbreak Advisory Broadcasted Live to All Student Dashboards!');
+                    setTimeout(() => setBroadcastNotice(''), 3000);
+                  }}
+                  style={{
+                    background: C.primary,
+                    color: '#fff',
+                    padding: '10px 20px',
+                    borderRadius: 12,
+                    fontSize: 13,
+                    fontWeight: 800,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 4px 14px rgba(47,122,104,0.3)',
+                  }}
+                >
+                  <Send size={14} /> Broadcast Outbreak Advisory
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, TrendingUp, ShieldAlert, Sparkles, Activity, Users, Zap, CheckCircle2, ChevronRight, Sliders } from 'lucide-react';
+import { useOutbreakStore } from '../store/store.js';
 
 const C = {
   ink: '#17322C',
@@ -17,20 +18,25 @@ const C = {
 
 export default function OutbreakForecastModal({ onClose }) {
   const [interventionLevel, setInterventionLevel] = useState(30); // 0% to 100% intervention strength
+  const outbreakConfig = useOutbreakStore((s) => s.config);
+
+  const startCases = outbreakConfig?.activeCases || 7;
+  const baseR0 = outbreakConfig?.r0 || 1.84;
+  const diseaseName = outbreakConfig?.diseaseName || 'Viral Conjunctivitis (Eye Flu)';
+  const isolationDays = outbreakConfig?.isolationDays || 5;
 
   // Forecast calculations based on active clinic inputs and intervention slider
-  const baselineCases = [7, 12, 19, 28, 38, 44, 49]; // unmitigated exponential trajectory
   const dates = ['Day 1 (Today)', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'];
+  const baselineCases = dates.map((_, idx) => Math.round(startCases * Math.pow(Math.max(1.1, baseR0), idx * 0.45)));
 
   // Calculate mitigated projection curve:
   const reductionFactor = interventionLevel / 100;
   const projectedCases = baselineCases.map((cases, idx) => {
     if (idx === 0) return cases;
     const mitigated = Math.round(cases * (1 - reductionFactor * (idx * 0.14)));
-    return Math.max(7, mitigated);
+    return Math.max(startCases, mitigated);
   });
 
-  const baseR0 = 1.84;
   const currentR0 = (baseR0 * (1 - reductionFactor * 0.65)).toFixed(2);
   const peakCases = Math.max(...projectedCases);
 
