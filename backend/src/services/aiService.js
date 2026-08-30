@@ -171,3 +171,108 @@ Instructions:
     preventionTips
   };
 }
+
+/**
+ * Generates an evidence-based Cognitive Behavioral Therapy (CBT) Thought Reframe
+ * based on Beck Institute & Centre for Clinical Interventions (CCI) standards.
+ */
+export async function generateCBTReframe({
+  situation = '',
+  emotion = 'Anxiety',
+  automaticThought = '',
+  distortions = [],
+  evidenceFor = '',
+  evidenceAgainst = '',
+}) {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (apiKey && apiKey !== 'skip_for_now' && !apiKey.startsWith('re_')) {
+    try {
+      const systemPrompt = `You are a clinical Cognitive Behavioral Therapy (CBT) Specialist using the Beck Institute and Centre for Clinical Interventions (CCI) Thought Record protocol.
+A university student has documented an automatic negative thought and is working through cognitive restructuring.
+
+Analyze their input and provide a balanced, compassionate, evidence-based reframe:
+1. Explain how the identified distortions (${distortions.join(', ') || 'unhelpful thinking styles'}) distort reality.
+2. Synthesize the evidence to create a balanced, compassionate alternative thought.
+3. Provide a practical 10-minute micro-action to build momentum.
+4. Offer a Socratic question for long-term emotional regulation.
+
+Return strictly JSON in this format:
+{
+  "distortionExplanation": "Clear, validating explanation of how this thought pattern misrepresents the situation.",
+  "balancedThought": "A grounded, realistic, and compassionate alternative perspective synthesizing both sides of evidence.",
+  "copingMantra": "A short, memorable 1-line grounding reminder.",
+  "microAction": "One concrete 10-minute action step the student can take right now.",
+  "socraticQuestion": "A reflective question to ask oneself when this thought recurs."
+}`;
+
+      const userContent = `Student Input:
+- Situation / Trigger: ${situation || 'Academic / Campus Stressor'}
+- Primary Emotion: ${emotion}
+- Automatic Negative Thought: "${automaticThought}"
+- Identified Distortions: ${distortions.join(', ') || 'Unspecified'}
+- Evidence Supporting Thought: "${evidenceFor || 'None provided'}"
+- Evidence Contradicting Thought: "${evidenceAgainst || 'None provided'}"`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userContent}` }] }
+          ],
+          generationConfig: { responseMimeType: 'application/json' }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawJson) {
+          return JSON.parse(rawJson);
+        }
+      }
+    } catch (err) {
+      console.warn('Gemini CBT call failed, using clinical fallback engine:', err.message);
+    }
+  }
+
+  // Clinical Fallback Engine (CCI Protocol Heuristics)
+  const isCatastrophizing = distortions.includes('Catastrophizing / Fortune Telling') || /worst|fail|ruined|destroy|never/.test(automaticThought.toLowerCase());
+  const isAllOrNothing = distortions.includes('All-or-Nothing / Black-and-White') || /always|perfect|useless|every/.test(automaticThought.toLowerCase());
+  const isMindReading = distortions.includes('Mind Reading / Spotlight Effect') || /they think|judge|laugh|disappointed/.test(automaticThought.toLowerCase());
+
+  let explanation = "Your mind is treating an anxious hypothesis as an established absolute fact. This is an automatic threat response, not an objective forecast.";
+  let balanced = `While ${situation ? `the situation with ${situation}` : 'this challenge'} is genuinely demanding, one difficult moment or exam does not determine my entire trajectory. I have overcome academic hurdles before, and I can take it one manageable step at a time.`;
+  let mantra = "Feelings are signals, not absolute facts. Progress over perfection.";
+  let action = "Step away from your screen for 5 minutes, drink a glass of water, and write down just 1 small task you can finish in 15 minutes.";
+  let socratic = "If a close friend came to me with this exact fear, what compassionate and rational advice would I give them?";
+
+  if (isCatastrophizing) {
+    explanation = "You are experiencing Catastrophizing — your brain is jumping straight to the worst possible outcome while underestimating your ability to cope and problem-solve.";
+    balanced = `Even if things do not go 100% according to plan, the worst-case scenario is rarely what happens. There are multiple recovery pathways, resources, and people available to help.`;
+    mantra = "I am focusing on what I can control today, not the worst-case fear of tomorrow.";
+    action = "List 3 realistic intermediate outcomes between 'perfection' and 'complete disaster'.";
+    socratic = "What is the most *realistic* outcome, based on what has actually happened in similar situations in the past?";
+  } else if (isAllOrNothing) {
+    explanation = "You are caught in All-or-Nothing Thinking — seeing things in binary extremes (either 100% success or complete failure) with no space for learning.";
+    balanced = `Academic growth is non-linear. Making a mistake or scoring less than expected does not mean I am incompetent — it simply provides data on where to focus next.`;
+    mantra = "Imperfection is part of mastery, not proof of failure.";
+    action = "Identify 2 things you did well or learned from this effort, regardless of the score.";
+    socratic = "Where does this situation exist on a scale of 1 to 10, rather than strictly 0 or 100?";
+  } else if (isMindReading) {
+    explanation = "You are engaging in Mind Reading — assuming others are scrutinizing or judging you harshly, when in reality most people are preoccupied with their own stress.";
+    balanced = `I cannot read others' thoughts. Most professors and peers want students to succeed, and their transient opinions do not define my self-worth or capabilities.`;
+    mantra = "I don't need external validation to know that I am trying my best.";
+    action = "Focus your attention outward on your current project rather than trying to guess others' internal reactions.";
+    socratic = "Do I have concrete, verifiable proof that someone is judging me, or am I projecting my own self-criticism?";
+  }
+
+  return {
+    distortionExplanation: explanation,
+    balancedThought: balanced,
+    copingMantra: mantra,
+    microAction: action,
+    socraticQuestion: socratic,
+  };
+}

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { triageSymptoms } from '../services/aiService.js';
+import { triageSymptoms, generateCBTReframe } from '../services/aiService.js';
 import { evaluateSpatialOutbreaks } from '../services/outbreakEngine.js';
 import { aiLimiter } from '../middleware/rateLimiter.js';
 
@@ -14,6 +14,28 @@ router.post('/triage', aiLimiter, async (req, res, next) => {
     }
 
     const result = await triageSymptoms({ message, history });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/ai/cbt-reframe - Socratic Cognitive Behavioral Therapy Reframer
+router.post('/cbt-reframe', aiLimiter, async (req, res, next) => {
+  try {
+    const { situation, emotion, automaticThought, distortions, evidenceFor, evidenceAgainst } = req.body;
+    if (!automaticThought || typeof automaticThought !== 'string') {
+      return res.status(400).json({ error: 'Automatic thought is required for CBT analysis' });
+    }
+
+    const result = await generateCBTReframe({
+      situation,
+      emotion,
+      automaticThought,
+      distortions: Array.isArray(distortions) ? distortions : [],
+      evidenceFor,
+      evidenceAgainst,
+    });
     res.json(result);
   } catch (err) {
     next(err);

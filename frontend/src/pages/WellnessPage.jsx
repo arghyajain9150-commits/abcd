@@ -7,9 +7,10 @@ import {
   Check, CalendarCheck, ShieldCheck, MapPin, Search, Wind, Volume2, VolumeX,
   Smile, Frown, Meh, Compass, Feather, Flame, Sparkle, HelpCircle, ArrowLeft,
   BookOpen, Music, CheckCheck, Eye, Activity, Sliders, Award, Layers,
-  Printer, Download, AlertCircle, FileText
+  Printer, Download, AlertCircle, FileText, Scale, Zap, Bookmark, History
 } from 'lucide-react';
 import { useAuthStore } from '../store/store.js';
+import { generateCBTReframe } from '../api/index.js';
 
 const C = {
   ink: '#17322C',
@@ -24,6 +25,66 @@ const C = {
   border: '#E1E3DA',
   bg: '#F5F7F3',
 };
+
+// ─── Centre for Clinical Interventions (CCI) Cognitive Distortions ──
+const COGNITIVE_DISTORTIONS = [
+  {
+    id: 'all_or_nothing',
+    name: 'All-or-Nothing Thinking',
+    desc: 'Viewing situations in binary black-and-white terms (perfection vs. absolute failure).',
+    example: '"If I get one low score, my entire semester is ruined."',
+    icon: '⚖️',
+  },
+  {
+    id: 'catastrophizing',
+    name: 'Catastrophizing / Fortune Telling',
+    desc: 'Predicting the worst-case disaster and assuming you will be unable to cope.',
+    example: '"I will definitely freeze during the presentation and humiliate myself."',
+    icon: '💥',
+  },
+  {
+    id: 'overgeneralization',
+    name: 'Overgeneralization',
+    desc: 'Viewing a single difficult event as a permanent, never-ending pattern of defeat.',
+    example: '"I couldn\'t solve this lab code, so I\'m hopeless at engineering."',
+    icon: '🔁',
+  },
+  {
+    id: 'mental_filter',
+    name: 'Mental Filter (Disqualifying Positives)',
+    desc: 'Fixating on one single flaw while ignoring a multitude of positive achievements.',
+    example: '"The reviewer pointed out one typo, so the entire thesis is worthless."',
+    icon: '🔍',
+  },
+  {
+    id: 'mind_reading',
+    name: 'Mind Reading & Spotlight Effect',
+    desc: 'Assuming others are judging you harshly without any factual confirmation.',
+    example: '"They saw my question in the group chat and think I am incompetent."',
+    icon: '🧠',
+  },
+  {
+    id: 'emotional_reasoning',
+    name: 'Emotional Reasoning',
+    desc: 'Believing that because you feel anxious or inadequate, it must be the objective truth.',
+    example: '"I feel like an imposter, therefore I must actually be a fraud."',
+    icon: '🌊',
+  },
+  {
+    id: 'should_statements',
+    name: '"Should" & "Must" Demands',
+    desc: 'Imposing rigid, punitive rules upon yourself or others.',
+    example: '"I should always be able to study 10 hours straight without losing focus."',
+    icon: '📏',
+  },
+  {
+    id: 'personalization',
+    name: 'Personalization & Unfair Blame',
+    desc: 'Blaming yourself exclusively for circumstances beyond your full control.',
+    example: '"Our project submission had bugs because I wasn\'t competent enough."',
+    icon: '🎯',
+  },
+];
 
 // ─── 1. Harvard mindLAMP (BIDMC) Standard PHQ-4 Questions ───────────
 const PHQ4_QUESTIONS = [
@@ -371,38 +432,113 @@ export default function WellnessPage() {
     setGroundingCompleted(false);
   };
 
-  // ─── 3. MENTALLAMA & CCI CBT THOUGHT CHALLENGER ──────────────────
-  const [cbtThought, setCbtThought] = useState('');
-  const [cbtResult, setCbtResult] = useState(null);
-  const [cbtProcessing, setCbtProcessing] = useState(false);
+  // ─── 3. CENTRE FOR CLINICAL INTERVENTIONS (CCI) THOUGHT RECORD ───
+  const [cbtStep, setCbtStep] = useState(1); // 1: Situation & Emotion | 2: Hot Thought | 3: Distortions | 4: Evidence | 5: Reframe & Outcome
+  const [cbtSituation, setCbtSituation] = useState('');
+  const [cbtEmotion, setCbtEmotion] = useState('Anxiety / Panic');
+  const [cbtInitialDistress, setCbtInitialDistress] = useState(75); // 0 - 100%
 
-  const handleProcessCBT = (e) => {
-    e.preventDefault();
-    if (!cbtThought.trim()) return;
+  const [cbtAutomaticThought, setCbtAutomaticThought] = useState('');
+  const [cbtInitialBelief, setCbtInitialBelief] = useState(80); // 0 - 100%
 
-    setCbtProcessing(true);
-    const lower = cbtThought.toLowerCase();
+  const [cbtDistortions, setCbtDistortions] = useState(['catastrophizing']);
 
-    setTimeout(() => {
-      setCbtProcessing(false);
-      let distortion = 'Catastrophizing & Fortune Telling';
-      let reframe = 'Assuming the absolute worst-case outcome without considering evidence of past resilience or intermediate positive steps.';
+  const [cbtEvidenceFor, setCbtEvidenceFor] = useState('');
+  const [cbtEvidenceAgainst, setCbtEvidenceAgainst] = useState('');
 
-      if (/everyone|nobody|always|never|useless|stupid/.test(lower)) {
-        distortion = 'All-or-Nothing / Black-and-White Thinking';
-        reframe = 'Viewing a temporary academic hurdle as a permanent, binary failure. You do not need perfection to make valuable progress.';
-      } else if (/they think|judge|embarrassed|laugh/.test(lower)) {
-        distortion = 'Mind Reading & Spotlight Effect';
-        reframe = 'Assuming peers or professors are judging you harshly, when in reality most students are preoccupied with their own coursework.';
-      }
+  const [cbtBalancedThought, setCbtBalancedThought] = useState('');
+  const [cbtOutcomeDistress, setCbtOutcomeDistress] = useState(30); // 0 - 100%
 
-      setCbtResult({
-        thought: cbtThought.trim(),
-        distortion,
-        reframe,
-        rationalFact: 'Action Item: Break this stressor into 1 small 20-minute action. Progress over perfection.',
+  const [cbtAIAnalysis, setCbtAIAnalysis] = useState(null);
+  const [cbtAILoading, setCbtAILoading] = useState(false);
+  const [cbtSavedNotice, setCbtSavedNotice] = useState('');
+
+  const [cbtDiary, setCbtDiary] = useState(() => {
+    try {
+      const saved = localStorage.getItem('champ_cbt_diary');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleToggleDistortion = (id) => {
+    if (cbtDistortions.includes(id)) {
+      setCbtDistortions(cbtDistortions.filter((d) => d !== id));
+    } else {
+      setCbtDistortions([...cbtDistortions, id]);
+    }
+  };
+
+  const handleRequestAIReframe = async () => {
+    if (!cbtAutomaticThought.trim()) return;
+    setCbtAILoading(true);
+    try {
+      const selectedNames = cbtDistortions.map((id) => {
+        const item = COGNITIVE_DISTORTIONS.find((d) => d.id === id);
+        return item ? item.name : id;
       });
-    }, 1100);
+
+      const res = await generateCBTReframe({
+        situation: cbtSituation,
+        emotion: cbtEmotion,
+        automaticThought: cbtAutomaticThought,
+        distortions: selectedNames,
+        evidenceFor: cbtEvidenceFor,
+        evidenceAgainst: cbtEvidenceAgainst,
+      });
+
+      if (res.data) {
+        setCbtAIAnalysis(res.data);
+        if (!cbtBalancedThought.trim() && res.data.balancedThought) {
+          setCbtBalancedThought(res.data.balancedThought);
+        }
+      }
+    } catch (err) {
+      console.warn('AI Reframe request fallback:', err);
+    } finally {
+      setCbtAILoading(false);
+    }
+  };
+
+  const handleSaveToDiary = () => {
+    const newEntry = {
+      id: Date.now().toString(),
+      date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      situation: cbtSituation || 'Academic Event',
+      emotion: cbtEmotion,
+      initialDistress: cbtInitialDistress,
+      automaticThought: cbtAutomaticThought,
+      initialBelief: cbtInitialBelief,
+      distortions: cbtDistortions,
+      evidenceFor: cbtEvidenceFor,
+      evidenceAgainst: cbtEvidenceAgainst,
+      balancedThought: cbtBalancedThought,
+      outcomeDistress: cbtOutcomeDistress,
+      relief: Math.max(0, cbtInitialDistress - cbtOutcomeDistress),
+      aiAnalysis: cbtAIAnalysis,
+    };
+
+    const updated = [newEntry, ...cbtDiary];
+    setCbtDiary(updated);
+    localStorage.setItem('champ_cbt_diary', JSON.stringify(updated));
+    setCbtSavedNotice('✓ Saved to your confidential Thought Diary!');
+    setTimeout(() => setCbtSavedNotice(''), 3500);
+  };
+
+  const handleResetCBT = () => {
+    setCbtStep(1);
+    setCbtSituation('');
+    setCbtEmotion('Anxiety / Panic');
+    setCbtInitialDistress(75);
+    setCbtAutomaticThought('');
+    setCbtInitialBelief(80);
+    setCbtDistortions(['catastrophizing']);
+    setCbtEvidenceFor('');
+    setCbtEvidenceAgainst('');
+    setCbtBalancedThought('');
+    setCbtOutcomeDistress(30);
+    setCbtAIAnalysis(null);
   };
 
   // ─── 4. NATIVE WEB AUDIO AMBIENT SOUNDSCAPE SYNTHESIZER ──────────
@@ -1375,51 +1511,627 @@ export default function WellnessPage() {
       {/* ────────────────────────────────────────────────────────────────
           VIEW 4: MENTALLAMA & CCI CBT THOUGHT CHALLENGER
       ──────────────────────────────────────────────────────────────── */}
+      {/* ────────────────────────────────────────────────────────────────
+          VIEW 4: CENTRE FOR CLINICAL INTERVENTIONS (CCI) THOUGHT RECORD
+      ──────────────────────────────────────────────────────────────── */}
       {activeView === 'cbt' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ background: C.surface, borderRadius: 20, padding: 20, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <div className="champ-heading" style={{ fontSize: 18, fontWeight: 800, color: C.ink }}>
-                MentaLLaMA & CCI Cognitive Thought Challenger
+          <div style={{ background: C.surface, borderRadius: 20, padding: 22, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 18, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+            
+            {/* Header & Badges */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 10, background: C.primarySoft, color: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Scale size={18} />
+                  </div>
+                  <div>
+                    <div className="champ-heading" style={{ fontSize: 18, fontWeight: 800, color: C.ink }}>
+                      CCI Cognitive Thought Challenger & Restructuring
+                    </div>
+                    <div style={{ fontSize: 12, color: C.soft, marginTop: 1 }}>
+                      Centre for Clinical Interventions (CCI) standard 5-step empirical protocol to reframe automatic negative thoughts.
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: C.soft, marginTop: 2 }}>
-                Classify automatic negative thoughts and reframe cognitive distortions into balanced facts.
+
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, background: C.primarySoft, color: C.primary, padding: '4px 10px', borderRadius: 99, fontWeight: 700 }}>
+                  📋 Beck Protocol
+                </span>
+                <span style={{ fontSize: 11, background: '#EBF3FF', color: '#2563EB', padding: '4px 10px', borderRadius: 99, fontWeight: 700 }}>
+                  🔒 100% Confidential
+                </span>
               </div>
             </div>
 
-            <form onSubmit={handleProcessCBT} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <textarea
-                rows={3}
-                placeholder="What intrusive thought is bothering you? (e.g. 'If I do not score 90% in this exam, my career is completely ruined')..."
-                value={cbtThought}
-                onChange={(e) => setCbtThought(e.target.value)}
-                required
-                style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${C.border}`, fontSize: 13, outline: 'none', resize: 'none' }}
-              />
+            {/* Stepper Progress Bar (Steps 1 to 5) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, background: C.bg, padding: 4, borderRadius: 14, border: `1px solid ${C.border}` }}>
+              {[
+                { step: 1, label: '1. Situation & Emotion' },
+                { step: 2, label: '2. Hot Thought' },
+                { step: 3, label: '3. Distortions' },
+                { step: 4, label: '4. Evidence Test' },
+                { step: 5, label: '5. Balanced Reframe' },
+              ].map((s) => {
+                const isCurrent = cbtStep === s.step;
+                const isPast = cbtStep > s.step;
+                return (
+                  <button
+                    key={s.step}
+                    type="button"
+                    onClick={() => setCbtStep(s.step)}
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: 10,
+                      fontSize: 11,
+                      fontWeight: isCurrent ? 800 : 600,
+                      background: isCurrent ? C.primary : (isPast ? C.primarySoft : 'transparent'),
+                      color: isCurrent ? '#fff' : (isPast ? C.primary : C.soft),
+                      border: 'none',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
 
-              <button
-                type="submit"
-                disabled={cbtProcessing || !cbtThought.trim()}
-                style={{ background: C.primary, color: '#fff', padding: '10px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-              >
-                <Sparkles size={15} /> {cbtProcessing ? 'Analyzing Cognitive Distortions…' : 'Challenge & Reframe Thought'}
-              </button>
-            </form>
-
-            {cbtResult && (
-              <div style={{ background: '#F8F9F7', borderRadius: 16, padding: 16, border: `1.5px solid ${C.primarySoft}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* STEP 1: Situation & Emotion */}
+            {cbtStep === 1 && (
+              <div style={{ background: C.bg, borderRadius: 16, padding: 18, border: `1.5px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: C.urgent, textTransform: 'uppercase' }}>Detected Cognitive Distortion</span>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginTop: 2 }}>{cbtResult.distortion}</div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>
+                    Step 1 of 5 · Situation & Emotional Trigger
+                  </span>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginTop: 2 }}>
+                    What event or situation triggered this wave of distress?
+                  </div>
+                  <div style={{ fontSize: 12, color: C.soft, marginTop: 1 }}>
+                    Be objective (e.g. "Received grade on mid-term paper", "Hostel placement interview tomorrow morning").
+                  </div>
                 </div>
 
-                <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>💡 Rational CBT Reframe</span>
-                  <div style={{ fontSize: 13, color: C.ink, marginTop: 2, lineHeight: 1.45 }}>{cbtResult.reframe}</div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Triggering Situation</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Struggling with the CS lab assignment while my lab partners seem to finish quickly..."
+                    value={cbtSituation}
+                    onChange={(e) => setCbtSituation(e.target.value)}
+                    style={{ width: '100%', marginTop: 4, padding: '10px 14px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 13, background: '#fff' }}
+                  />
                 </div>
 
-                <div style={{ background: C.primarySoft, borderRadius: 10, padding: 10, fontSize: 12, color: C.primary, fontWeight: 600 }}>
-                  🎯 {cbtResult.rationalFact}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Primary Emotion Felt</label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                    {['Anxiety / Panic', 'Academic Overwhelm', 'Depressed / Hopeless', 'Anger / Frustration', 'Imposter Syndrome', 'Guilt / Self-Blame'].map((emo) => (
+                      <button
+                        key={emo}
+                        type="button"
+                        onClick={() => setCbtEmotion(emo)}
+                        style={{
+                          background: cbtEmotion === emo ? C.primary : '#fff',
+                          color: cbtEmotion === emo ? '#fff' : C.ink,
+                          border: `1px solid ${cbtEmotion === emo ? C.primary : C.border}`,
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {emo}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 12, padding: 14, border: `1px solid ${C.border}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: C.urgent, textTransform: 'uppercase' }}>Initial Emotional Distress Intensity</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: C.urgent }}>{cbtInitialDistress}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={cbtInitialDistress}
+                    onChange={(e) => setCbtInitialDistress(parseInt(e.target.value))}
+                    style={{ width: '100%', accentColor: C.urgent, marginTop: 6 }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: C.soft, marginTop: 2 }}>
+                    <span>0% (Calm / Neutral)</span>
+                    <span>50% (Moderate Distress)</span>
+                    <span>100% (Overwhelming Crisis)</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCbtStep(2)}
+                    style={{ background: C.primary, color: '#fff', padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <span>Proceed to Identify Hot Thought</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: Automatic Negative "Hot" Thought */}
+            {cbtStep === 2 && (
+              <div style={{ background: C.bg, borderRadius: 16, padding: 18, border: `1.5px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>
+                    Step 2 of 5 · Catch the Automatic "Hot" Thought
+                  </span>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginTop: 2 }}>
+                    What exact thought, unhelpful rule, or fear flashed in your mind?
+                  </div>
+                  <div style={{ fontSize: 12, color: C.soft, marginTop: 1 }}>
+                    What did you tell yourself this situation meant about your competence or future?
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Automatic Negative Thought</label>
+                  <textarea
+                    rows={3}
+                    placeholder="e.g. 'If I cannot solve this single lab problem, I will fail the course, disappoint my parents, and my entire engineering degree is a mistake.'..."
+                    value={cbtAutomaticThought}
+                    onChange={(e) => setCbtAutomaticThought(e.target.value)}
+                    style={{ width: '100%', marginTop: 4, padding: '12px 14px', borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 13, background: '#fff', resize: 'none' }}
+                  />
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 12, padding: 14, border: `1px solid ${C.border}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>How strongly do you believe this thought right now?</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: C.ink }}>{cbtInitialBelief}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={cbtInitialBelief}
+                    onChange={(e) => setCbtInitialBelief(parseInt(e.target.value))}
+                    style={{ width: '100%', accentColor: C.primary, marginTop: 6 }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: C.soft, marginTop: 2 }}>
+                    <span>0% (Not convinced)</span>
+                    <span>50% (Partially true)</span>
+                    <span>100% (Absolute certainty)</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCbtStep(1)}
+                    style={{ background: '#fff', color: C.soft, border: `1px solid ${C.border}`, padding: '10px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCbtStep(3)}
+                    disabled={!cbtAutomaticThought.trim()}
+                    style={{ background: C.primary, color: '#fff', padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: !cbtAutomaticThought.trim() ? 0.6 : 1 }}
+                  >
+                    <span>Analyze Cognitive Distortions</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: Cognitive Distortions Identifier */}
+            {cbtStep === 3 && (
+              <div style={{ background: C.bg, borderRadius: 16, padding: 18, border: `1.5px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>
+                    Step 3 of 5 · Pinpoint Cognitive Distortions
+                  </span>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginTop: 2 }}>
+                    Which unhelpful thinking styles are present in your hot thought?
+                  </div>
+                  <div style={{ fontSize: 12, color: C.soft, marginTop: 1 }}>
+                    Select all distortions that apply to understand how your brain is distorting reality.
+                  </div>
+                </div>
+
+                {/* Distortions Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
+                  {COGNITIVE_DISTORTIONS.map((d) => {
+                    const isSelected = cbtDistortions.includes(d.id);
+                    return (
+                      <div
+                        key={d.id}
+                        onClick={() => handleToggleDistortion(d.id)}
+                        style={{
+                          background: isSelected ? '#F0F9F5' : '#fff',
+                          border: `1.5px solid ${isSelected ? C.primary : C.border}`,
+                          borderRadius: 12,
+                          padding: 12,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 4,
+                          transition: 'all 0.15s ease',
+                          boxShadow: isSelected ? '0 2px 8px rgba(47,122,104,0.12)' : 'none',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 16 }}>{d.icon}</span>
+                            <span style={{ fontSize: 12.5, fontWeight: 800, color: isSelected ? C.primary : C.ink }}>
+                              {d.name}
+                            </span>
+                          </div>
+                          <div style={{ width: 18, height: 18, borderRadius: 6, border: `1.5px solid ${isSelected ? C.primary : C.border}`, background: isSelected ? C.primary : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {isSelected && <Check size={12} color="#fff" />}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 11, color: C.soft, lineHeight: 1.35 }}>
+                          {d.desc}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: isSelected ? C.primary : C.soft, fontStyle: 'italic', marginTop: 2, background: isSelected ? '#E4EFEA' : C.bg, padding: '3px 6px', borderRadius: 4 }}>
+                          {d.example}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCbtStep(2)}
+                    style={{ background: '#fff', color: C.soft, border: `1px solid ${C.border}`, padding: '10px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCbtStep(4)}
+                    style={{ background: C.primary, color: '#fff', padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <span>Proceed to Test Evidence</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: Dual-Column Evidence Examination */}
+            {cbtStep === 4 && (
+              <div style={{ background: C.bg, borderRadius: 16, padding: 18, border: `1.5px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>
+                    Step 4 of 5 · Empirical Evidence Examination
+                  </span>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginTop: 2 }}>
+                    Put your thought on trial: Facts supporting vs. Facts contradicting
+                  </div>
+                  <div style={{ fontSize: 12, color: C.soft, marginTop: 1 }}>
+                    Only include concrete facts that would stand up in a court of law. Feelings and assumptions are not evidence.
+                  </div>
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 12, padding: 12, border: `1px solid ${C.border}` }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: C.soft, textTransform: 'uppercase' }}>Thought on Trial:</span>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.urgent, marginTop: 2 }}>"{cbtAutomaticThought}"</div>
+                </div>
+
+                {/* Dual-Column Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+                  
+                  {/* Evidence FOR */}
+                  <div style={{ background: '#fff', borderRadius: 14, padding: 14, border: `1.5px solid #F5C6BA`, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 14 }}>📝</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: C.urgent, textTransform: 'uppercase' }}>
+                        Evidence That Truly SUPPORTS the Thought
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11, color: C.soft }}>
+                      What concrete objective facts (not feelings) support this belief?
+                    </div>
+                    <textarea
+                      rows={4}
+                      placeholder="e.g. I did score 12/20 on Quiz 1, and there are 2 tricky topics I haven't fully mastered yet..."
+                      value={cbtEvidenceFor}
+                      onChange={(e) => setCbtEvidenceFor(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, resize: 'none' }}
+                    />
+                  </div>
+
+                  {/* Evidence AGAINST */}
+                  <div style={{ background: '#fff', borderRadius: 14, padding: 14, border: `1.5px solid #B8E0D2`, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 14 }}>🔍</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>
+                        Evidence That CONTRADICTS the Thought
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11, color: C.soft }}>
+                      What past resilience, counter-examples, or alternative facts exist?
+                    </div>
+                    <textarea
+                      rows={4}
+                      placeholder="e.g. I passed previous semesters, the final exam is worth 50%, professor holds office hours on Tuesday, and quiz 1 was only worth 5%..."
+                      value={cbtEvidenceAgainst}
+                      onChange={(e) => setCbtEvidenceAgainst(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12.5, resize: 'none' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Socratic Helper Questions */}
+                <div style={{ background: '#FFFDF5', borderRadius: 12, padding: 12, border: `1px solid #F5E6B3`, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#B45309', textTransform: 'uppercase' }}>💡 Socratic Questions to Stimulate Counter-Evidence:</span>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {[
+                      'What would I tell my best friend in this exact situation?',
+                      'Have I survived and overcome a similar challenge before?',
+                      'What is the most realistic middle-ground outcome between 0 and 100%?',
+                    ].map((q, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setCbtEvidenceAgainst(prev => prev ? `${prev}\n• ${q}` : `• ${q}`)}
+                        style={{ background: '#fff', border: '1px solid #F5D590', borderRadius: 6, padding: '4px 8px', fontSize: 11, color: '#92400E', cursor: 'pointer', textAlign: 'left' }}
+                      >
+                        + "{q}"
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCbtStep(3)}
+                    style={{ background: '#fff', color: C.soft, border: `1px solid ${C.border}`, padding: '10px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCbtStep(5)}
+                    style={{ background: C.primary, color: '#fff', padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <span>Proceed to Balanced Reframe</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 5: Balanced Alternative Reframe & Measured Relief */}
+            {cbtStep === 5 && (
+              <div style={{ background: C.bg, borderRadius: 16, padding: 18, border: `1.5px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>
+                    Step 5 of 5 · Balanced Perspective & Distress Reduction
+                  </span>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.ink, marginTop: 2 }}>
+                    Synthesize the evidence into a balanced, compassionate, and realistic fact.
+                  </div>
+                </div>
+
+                {/* AI Assistant Reframe Trigger */}
+                <div style={{ background: '#F0F9F5', borderRadius: 14, padding: 14, border: `1.5px solid ${C.primary}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Sparkles size={18} color={C.primary} />
+                      <span style={{ fontSize: 13, fontWeight: 800, color: C.primary }}>
+                        AI Socratic CBT Assistant (Beck Institute Engine)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRequestAIReframe}
+                      disabled={cbtAILoading}
+                      style={{
+                        background: C.primary,
+                        color: '#fff',
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <Sparkles size={13} /> {cbtAILoading ? 'Synthesizing CBT Analysis…' : 'Generate Clinical Socratic Reframe'}
+                    </button>
+                  </div>
+
+                  {cbtAIAnalysis && (
+                    <div style={{ background: '#fff', borderRadius: 12, padding: 14, border: `1px solid ${C.primarySoft}`, display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+                      <div>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: C.urgent, textTransform: 'uppercase' }}>Distortion Diagnosis:</span>
+                        <div style={{ fontSize: 12.5, color: C.ink, marginTop: 2 }}>{cbtAIAnalysis.distortionExplanation}</div>
+                      </div>
+
+                      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 8 }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: C.primary, textTransform: 'uppercase' }}>💡 Recommended Balanced Thought:</span>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: C.ink, marginTop: 2, lineHeight: 1.4 }}>{cbtAIAnalysis.balancedThought}</div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8, marginTop: 2 }}>
+                        <div style={{ background: C.primarySoft, borderRadius: 8, padding: 8, fontSize: 11.5, color: C.primary, fontWeight: 700 }}>
+                          🎯 Coping Mantra: "{cbtAIAnalysis.copingMantra}"
+                        </div>
+                        <div style={{ background: '#FFF8E6', borderRadius: 8, padding: 8, fontSize: 11.5, color: '#B45309', fontWeight: 700 }}>
+                          ⏱️ 10-Min Micro Action: {cbtAIAnalysis.microAction}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* User's Final Balanced Thought */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: C.soft, textTransform: 'uppercase' }}>Your Final Balanced & Realistic Perspective</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Write a balanced, compassionate summary of the situation (e.g. 'While this lab is challenging, getting stuck is normal in programming. One difficult lab does not mean I am failing my degree, and I will attend tomorrow's TA session to clarify my questions.')..."
+                    value={cbtBalancedThought}
+                    onChange={(e) => setCbtBalancedThought(e.target.value)}
+                    style={{ width: '100%', marginTop: 4, padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${C.primary}`, fontSize: 13, background: '#fff', resize: 'none' }}
+                  />
+                </div>
+
+                {/* Re-Rate Emotional Distress & Relief Metric */}
+                <div style={{ background: '#fff', borderRadius: 14, padding: 16, border: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: '#1B7A4B', textTransform: 'uppercase' }}>
+                        Re-Rate Your Emotional Distress Now
+                      </span>
+                      <div style={{ fontSize: 12, color: C.soft }}>After examining the facts, how intense is your distress now?</div>
+                    </div>
+                    <span style={{ fontSize: 18, fontWeight: 900, color: '#1B7A4B' }}>{cbtOutcomeDistress}%</span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={cbtOutcomeDistress}
+                    onChange={(e) => setCbtOutcomeDistress(parseInt(e.target.value))}
+                    style={{ width: '100%', accentColor: '#1B7A4B' }}
+                  />
+
+                  {/* Calculated Relief Score */}
+                  <div style={{ background: '#EAF8F0', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <CheckCircle2 size={18} color="#1B7A4B" />
+                      <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1B7A4B' }}>
+                        Cognitive Shift Achieved:
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: '#1B7A4B' }}>
+                      📉 {Math.max(0, cbtInitialDistress - cbtOutcomeDistress)}% Drop in Distress ({cbtInitialDistress}% → {cbtOutcomeDistress}%)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Save & Export Actions */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCbtStep(4)}
+                    style={{ background: '#fff', color: C.soft, border: `1px solid ${C.border}`, padding: '10px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ← Back
+                  </button>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      style={{ background: '#fff', color: C.ink, border: `1px solid ${C.border}`, padding: '10px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+                    >
+                      <Printer size={14} /> Print Worksheet
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveToDiary}
+                      style={{ background: C.primary, color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                    >
+                      <Bookmark size={14} /> Save to Thought Diary
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleResetCBT}
+                      style={{ background: C.bg, color: C.ink, border: `1px solid ${C.border}`, padding: '10px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      New Record
+                    </button>
+                  </div>
+                </div>
+
+                {cbtSavedNotice && (
+                  <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 800, color: C.primary, background: C.primarySoft, padding: 8, borderRadius: 8 }}>
+                    {cbtSavedNotice}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Thought Diary History Section */}
+            {cbtDiary.length > 0 && (
+              <div style={{ marginTop: 10, borderTop: `1.5px solid ${C.border}`, paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <History size={16} color={C.primary} />
+                    <span style={{ fontSize: 14, fontWeight: 800, color: C.ink }}>
+                      Confidential Thought Diary ({cbtDiary.length} Records)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('Clear all saved thought records?')) {
+                        localStorage.removeItem('champ_cbt_diary');
+                        setCbtDiary([]);
+                      }
+                    }}
+                    style={{ background: 'transparent', color: C.urgent, border: 'none', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Clear History
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {cbtDiary.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: C.bg,
+                        borderRadius: 12,
+                        padding: 14,
+                        border: `1px solid ${C.border}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 6,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: C.soft }}>{item.date} · {item.emotion}</span>
+                        <span style={{ fontSize: 11, fontWeight: 800, background: '#EAF8F0', color: '#1B7A4B', padding: '2px 8px', borderRadius: 6 }}>
+                          📉 -{item.relief}% Relief
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12.5, color: C.urgent, fontWeight: 600 }}>
+                        ❌ Hot Thought: "{item.automaticThought}"
+                      </div>
+                      <div style={{ fontSize: 12.5, color: C.primary, fontWeight: 700 }}>
+                        💡 Balanced Fact: "{item.balancedThought || 'Reframed with evidence.'}"
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
